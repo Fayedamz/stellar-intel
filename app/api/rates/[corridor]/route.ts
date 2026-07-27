@@ -4,6 +4,7 @@ import { isValidCorridorId, isAnchorDegraded } from '@/lib/stellar/anchors';
 import { fetchCorridorRates } from '@/lib/stellar/server-rates';
 import { AMOUNT_PATTERN } from '@/lib/patterns';
 import { getCachedRate, setCachedRate, invalidateCachedRates } from '@/lib/api/rate-cache';
+import { recordRatesCacheHit, recordRatesCacheMiss } from '@/lib/metrics';
 
 // Live anchor calls must run per-request, never at build time.
 export const dynamic = 'force-dynamic';
@@ -25,7 +26,8 @@ export async function GET(
       return NextResponse.json({ error: `Unknown corridor: "${corridor}"` }, { status: 400 });
     }
 
-    const amount = new URL(request.url).searchParams.get('amount') ?? '100';
+    const url = new URL(request.url);
+    const amount = url.searchParams.get('amount') ?? '100';
     if (!AMOUNT_PATTERN.test(amount) || Number(amount) <= 0) {
       logger.warn({ event: 'invalid_amount', amount });
       return NextResponse.json(
@@ -34,9 +36,27 @@ export async function GET(
       );
     }
 
-    const cached = getCachedRate(corridor, amount);
+    // A client can opt out of the shared cache with the standard no-cache
+    // directives, or explicitly with ?forceRefresh=true.
+    const cacheControl = request.headers.get('cache-control') ?? '';
+    const pragma = request.headers.get('pragma') ?? '';
+    const forceRefresh =
+      cacheControl.includes('no-cache') ||
+      cacheControl.includes('no-store') ||
+      pragma.includes('no-cache') ||
+      url.searchParams.get('forceRefresh') === 'true';
+
+    const cached = forceRefresh ? undefined : getCachedRate(corridor, amount);
     const hasHealthyCachedResult =
-      cached && !cached.rates.some((rate) => isAnchorDegraded(rate.anchorId));
+      cached !== undefined && !cached.rates.some((rate) => isAnchorDegraded(rate.anchorId));
+
+    // Hit/miss counters feed the /api/metrics snapshot (#737). A bypassed or
+    // degraded-anchor lookup counts as a miss — it still costs an upstream fetch.
+    if (hasHealthyCachedResult) {
+      recordRatesCacheHit();
+    } else {
+      recordRatesCacheMiss();
+    }
 
     let result = cached;
     if (!result || !hasHealthyCachedResult) {
@@ -57,6 +77,7 @@ export async function GET(
         amount,
         quoted: result.rates.length,
         failed: result.errors?.length ?? 0,
+        forceRefresh,
       });
     } else {
       logger.info({
