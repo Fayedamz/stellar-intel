@@ -144,7 +144,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (parsed.data.kind !== 'offramp') {
       logger.warn({ event: 'unsupported_kind', kind: parsed.data.kind });
       return NextResponse.json<ApiError>(
-        { code: 'NOT_IMPLEMENTED', message: `${parsed.data.kind} intents are not yet handled by this endpoint` },
+        {
+          code: 'NOT_IMPLEMENTED',
+          message: `${parsed.data.kind} intents are not yet handled by this endpoint`,
+        },
         { status: 501 }
       );
     }
