@@ -384,6 +384,90 @@ export type SolverResult =
   | { ok: false; error: 'all_quotes_expired'; details: string }
   | { ok: false; error: 'fee_budget_exceeded'; details: string };
 
+// ─── Hop chain (H3 primitive II — chained atomic execution, #815) ─────────────
+//
+// A hop chain composes on-ramp, swap, and yield legs — the modules H2
+// deliberately deferred (see ROADMAP.md) — into a single sequenced plan.
+// "Atomic" here means every hop's preconditions are validated together
+// before any hop executes (see planHopChain in lib/router/hops.ts), not a
+// single ledger-level rollback: on-ramp/off-ramp legs are off-chain SEP
+// flows that cannot share a Stellar transaction with on-chain swap/yield
+// legs, so there is no ledger primitive that could make the whole chain
+// roll back atomically. Execution still stops at the first failed hop so
+// no downstream hop ever spends an output that was never produced.
+
+/** The three module types a hop chain can sequence. */
+export type HopType = 'on-ramp' | 'swap' | 'yield';
+
+/** An amount of a specific asset flowing between hops. */
+export interface HopAsset {
+  /** `iso4217:CCY` for fiat, `stellar:CODE:ISSUER` (or `stellar:native`) for a Stellar asset. */
+  asset: string;
+  amount: string;
+}
+
+/** A single planned leg of a hop chain, produced by `Hop.plan`. */
+export interface HopStep {
+  hopType: HopType;
+  /** Connector id, e.g. `moneygram-on-ramp`, `soroswap-swap`, `blend-yield`. */
+  hopId: string;
+  input: HopAsset;
+  output: HopAsset;
+  /** Connector-specific data needed to execute this step (quote id, pool id, XDR, etc). */
+  details: Record<string, unknown>;
+}
+
+/** A composed, planned hop chain ready to execute. */
+export interface HopChainPlan {
+  type: 'hop_chain';
+  steps: HopStep[];
+  finalOutput: HopAsset;
+}
+
+export type HopPlanResult =
+  | { ok: true; step: HopStep }
+  | { ok: false; hopId: string; error: string; details?: string };
+
+export type HopExecutionResult =
+  | { ok: true; hopId: string; output: HopAsset; txRef?: string }
+  | { ok: false; hopId: string; error: string; details?: string };
+
+/** Shared, read-only context threaded through every hop in a chain. */
+export interface HopContext {
+  now?: () => Date;
+  [key: string]: unknown;
+}
+
+/**
+ * A single leg a solver can chain: on-ramp, swap, or yield. `plan` must be
+ * side-effect free (simulate only); `execute` is only ever called with a
+ * step that this same hop already planned successfully.
+ */
+export interface Hop {
+  readonly type: HopType;
+  readonly id: string;
+  plan(input: HopAsset, context: HopContext): Promise<HopPlanResult>;
+  execute(step: HopStep, context: HopContext): Promise<HopExecutionResult>;
+}
+
+export type HopChainPlanResult =
+  | { ok: true; plan: HopChainPlan }
+  | {
+      ok: false;
+      failedHopId: string;
+      error: string;
+      details?: string;
+      /** Steps that planned successfully before the failure, for diagnostics. */
+      completedSteps: HopStep[];
+    };
+
+export interface HopChainExecutionResult {
+  ok: boolean;
+  /** Results in the order attempted; stops at the first failure. */
+  completed: HopExecutionResult[];
+  failedAt?: string;
+}
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 /** Shape returned by API routes on error. */
