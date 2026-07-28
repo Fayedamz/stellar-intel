@@ -13,20 +13,25 @@ import { hashIntent } from '@/lib/intent/hash';
 import { USDC_ISSUER } from '@/lib/config';
 import { withRequestLogger } from '@/lib/logger';
 import { recordIntentError, recordIntentSuccess } from '@/lib/metrics';
-import { AMOUNT_PATTERN } from '@/lib/patterns';
+import { CanonicalIntentV1Schema } from '@/types/intent';
 import type { Intent } from '@/lib/intent/hash';
 import type { ApiError } from '@/types';
 
 // ─── Request schema ────────────────────────────────────────────────────────────
 
-const IntentSchema = z.object({
-  type: z.literal('offramp'),
-  sourceAsset: z.string().min(1),
-  destinationAsset: z.string().min(1),
-  amount: z.string().regex(AMOUNT_PATTERN, 'amount must be a positive decimal string'),
-  sender: z.string().min(1),
-  recipient: z.string().min(1),
-});
+// Legacy clients send `type: 'offramp'` instead of `kind`. Map it so the
+// discriminated union can validate it. If neither field is present, the union
+// rejects the payload (missing discriminant) as a VALIDATION_ERROR.
+const IntentSchema = z.preprocess((raw) => {
+  if (!raw || typeof raw !== 'object') return raw;
+  const obj = raw as Record<string, unknown>;
+  if ('kind' in obj) return obj;
+  if ('type' in obj) {
+    const { type, ...rest } = obj;
+    return { kind: type, ...rest };
+  }
+  return obj;
+}, CanonicalIntentV1Schema);
 
 // ─── Response types ────────────────────────────────────────────────────────────
 
@@ -136,7 +141,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const intent = parsed.data as Intent;
+    if (parsed.data.kind !== 'offramp') {
+      logger.warn({ event: 'unsupported_kind', kind: parsed.data.kind });
+      return NextResponse.json<ApiError>(
+        { code: 'NOT_IMPLEMENTED', message: `${parsed.data.kind} intents are not yet handled by this endpoint` },
+        { status: 501 }
+      );
+    }
+
+    const intent = parsed.data as unknown as Intent;
     const route = resolveRoute(intent.sourceAsset, intent.destinationAsset);
 
     logger.info({
