@@ -90,15 +90,15 @@ endpoint injects `kind: "offramp"` automatically.
 
 ### Common fields (all kinds)
 
-| Field               | Type             | Description                                            |
-| ------------------- | ---------------- | ------------------------------------------------------ |
-| `schemaVersion`     | `1` (literal)    | Schema version. Defaults to `1` when omitted.          |
-| `kind`              | see below        | Discriminant: `"offramp"`, `"chained"`, `"recurring"`. |
-| `sourceAsset`       | string           | Asset code being sold (e.g. `"USDC"`).                 |
-| `destinationAsset`  | string           | Asset or fiat code being received (e.g. `"NGN"`).      |
-| `amount`            | decimal string   | Sell amount; positive, up to 7 decimal places.         |
-| `sender`            | string           | Stellar public key of the originating account.         |
-| `recipient`         | string           | Destination address or account for the payout.         |
+| Field              | Type           | Description                                            |
+| ------------------ | -------------- | ------------------------------------------------------ |
+| `schemaVersion`    | `1` (literal)  | Schema version. Defaults to `1` when omitted.          |
+| `kind`             | see below      | Discriminant: `"offramp"`, `"chained"`, `"recurring"`. |
+| `sourceAsset`      | string         | Asset code being sold (e.g. `"USDC"`).                 |
+| `destinationAsset` | string         | Asset or fiat code being received (e.g. `"NGN"`).      |
+| `amount`           | decimal string | Sell amount; positive, up to 7 decimal places.         |
+| `sender`           | string         | Stellar public key of the originating account.         |
+| `recipient`        | string         | Destination address or account for the payout.         |
 
 ### `kind: "offramp"` (single off-ramp)
 
@@ -113,7 +113,7 @@ No additional fields beyond the common base.
   "destinationAsset": "NGN",
   "amount": "100.00",
   "sender": "GAB...",
-  "recipient": "0800-123-456"
+  "recipient": "0800-123-456",
 }
 ```
 
@@ -124,9 +124,9 @@ across hops is validated by the solver before execution. Requires at least 2 hop
 
 Additional field:
 
-| Field  | Type       | Description                                         |
-| ------ | ---------- | --------------------------------------------------- |
-| `hops` | `Hop[]`    | Ordered list of hops (minimum 2). See `IntentHop`.  |
+| Field  | Type    | Description                                        |
+| ------ | ------- | -------------------------------------------------- |
+| `hops` | `Hop[]` | Ordered list of hops (minimum 2). See `IntentHop`. |
 
 Each `IntentHop`:
 
@@ -151,15 +151,15 @@ Each `IntentHop`:
       "kind": "on-ramp",
       "sellAsset": { "code": "XLM" },
       "buyAsset": { "code": "USDC", "issuer": "GA5..." },
-      "minReceive": "14.5"
+      "minReceive": "14.5",
     },
     {
       "kind": "swap",
       "sellAsset": { "code": "USDC", "issuer": "GA5..." },
       "buyAsset": { "code": "NGN" },
-      "minReceive": "11000"
-    }
-  ]
+      "minReceive": "11000",
+    },
+  ],
 }
 ```
 
@@ -170,17 +170,17 @@ Repeats a payment on a cron schedule. The endpoint will reject this kind with
 
 Additional field:
 
-| Field      | Type             | Description                                                 |
-| ---------- | ---------------- | ----------------------------------------------------------- |
-| `schedule` | `IntentSchedule` | POSIX cron expression and optional termination conditions.  |
+| Field      | Type             | Description                                                |
+| ---------- | ---------------- | ---------------------------------------------------------- |
+| `schedule` | `IntentSchedule` | POSIX cron expression and optional termination conditions. |
 
 `IntentSchedule` fields:
 
-| Field   | Type    | Description                                                     |
-| ------- | ------- | --------------------------------------------------------------- |
-| `cron`  | string  | 5-field POSIX cron expression (e.g. `"0 9 * * 1"` = Mondays).   |
-| `count` | integer | Optional: cancel after this many executions.                    |
-| `until` | RFC3339 | Optional: cancel after this timestamp.                          |
+| Field   | Type    | Description                                                   |
+| ------- | ------- | ------------------------------------------------------------- |
+| `cron`  | string  | 5-field POSIX cron expression (e.g. `"0 9 * * 1"` = Mondays). |
+| `count` | integer | Optional: cancel after this many executions.                  |
+| `until` | RFC3339 | Optional: cancel after this timestamp.                        |
 
 ```jsonc
 {
@@ -193,8 +193,8 @@ Additional field:
   "recipient": "0800-123-456",
   "schedule": {
     "cron": "0 9 * * 1",
-    "count": 12
-  }
+    "count": 12,
+  },
 }
 ```
 
