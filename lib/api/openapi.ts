@@ -133,8 +133,29 @@ export function buildOpenApiSpec() {
     info: {
       title: 'Stellar Intel API',
       version: '1.2.0',
-      description: 'Intent router and anchor rate aggregation API for the Stellar Intel platform.',
+      description: [
+        'Intent router and anchor rate aggregation API for the Stellar Intel platform.',
+        '',
+        '## Public v1 surface',
+        '',
+        'The stable, supported surface is namespaced under `/api/v1/...`; unversioned',
+        'routes are internal and may change without notice. Every v1 response follows',
+        'the hardening contract (see `lib/api/v1.ts`):',
+        '',
+        '- **Error envelope** — errors return `{ "error": { "code", "message", "requestId" } }`.',
+        '- **Rate-limit headers** — `X-RateLimit-Limit`, `X-RateLimit-Remaining`,',
+        '  `X-RateLimit-Reset` on every response; `Retry-After` on a `429`.',
+        '- **Idempotency** — send an `Idempotency-Key` header on mutating endpoints',
+        '  (e.g. `POST /api/v1/intent/offramp`); a retried request replays the original',
+        '  response (`Idempotency-Replayed: true`) instead of creating a second intent.',
+      ].join('\n'),
     },
-    servers: [{ url: 'https://stellar-intel.vercel.app', description: 'Production' }],
+    servers: [
+      { url: 'https://stellar-intel.vercel.app/api/v1', description: 'Production (public v1)' },
+      {
+        url: 'https://stellar-intel.vercel.app',
+        description: 'Production (internal, unversioned)',
+      },
+    ],
   });
 }
