@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback } from 'react';
+import Link from 'next/link';
 import { ANCHORS, CORRIDORS } from '@/constants';
 import { AnchorCard } from '@/components/anchors/AnchorCard';
 import { Leaderboard } from '@/components/offramp/Leaderboard';
@@ -38,6 +39,12 @@ function AnchorsContent() {
             <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
             {ANCHORS.length} live {ANCHORS.length === 1 ? 'anchor' : 'anchors'}
           </span>
+          <Link
+            href="/anchors/standings"
+            className="rounded-full border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            Reputation standings →
+          </Link>
         </div>
         <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
           Explore registered Stellar anchors, their supported protocols, and corridor coverage.

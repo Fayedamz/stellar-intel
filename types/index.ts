@@ -73,6 +73,17 @@ export interface AnchorRate {
   quoteId?: string;
   /** Row-level quote lifecycle state. Only meaningful for source === 'sep38'. */
   quoteStatus?: 'firm' | 'expiring' | 'refreshing';
+  /**
+   * Composite reputation score for this anchor in the range [0, 1].
+   * Derived from fill rate, slippage, and settlement latency.
+   * Present when the leaderboard API is reachable; absent otherwise.
+   */
+  reputationScore?: number;
+  /**
+   * 1-based rank position in the reputation leaderboard (lower = better).
+   * Present when the leaderboard API is reachable; absent otherwise.
+   */
+  reputationRank?: number;
 }
 
 export interface AnchorRateError {

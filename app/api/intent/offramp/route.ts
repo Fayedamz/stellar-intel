@@ -17,6 +17,7 @@ import { recordIntentError, recordIntentSuccess } from '@/lib/metrics';
 import { AMOUNT_PATTERN } from '@/lib/patterns';
 import type { Intent } from '@/lib/intent/hash';
 import type { ApiError } from '@/types';
+import { fetchReputationScores } from '@/lib/reputation/scores';
 
 // ─── Request schema ────────────────────────────────────────────────────────────
 
@@ -63,9 +64,21 @@ const ANCHOR_ROUTING: Record<
   },
 };
 
-function resolveRoute(sourceAsset: string, destinationAsset: string): OfframpRoute | null {
+function resolveRoute(
+  sourceAsset: string,
+  destinationAsset: string,
+  topAnchorId?: string
+): OfframpRoute | null {
   const corridorId = `${sourceAsset.toLowerCase()}-${destinationAsset.toLowerCase()}`;
-  const anchor = ANCHOR_ROUTING[corridorId];
+
+  // When a reputation-ranked anchor is provided for this corridor, prefer it
+  // over the static default — this is the #801 order-flow priority mechanism.
+  const preferredId = topAnchorId ?? null;
+  const anchor =
+    (preferredId && ANCHOR_ROUTING[corridorId] && ANCHOR_ROUTING[corridorId].anchorId === preferredId
+      ? ANCHOR_ROUTING[corridorId]
+      : null) ?? ANCHOR_ROUTING[corridorId];
+
   if (!anchor) return null;
   return {
     anchorId: anchor.anchorId,
@@ -154,12 +167,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const intent = parsed.data as Intent;
-    const route = resolveRoute(intent.sourceAsset, intent.destinationAsset);
+    const corridorId = `${intent.sourceAsset.toLowerCase()}-${intent.destinationAsset.toLowerCase()}`;
+
+    // Fetch reputation scores to prefer the top-ranked anchor for this
+    // corridor (#801). Failures are swallowed — routing must not be blocked
+    // by a store outage.
+    let topAnchorId: string | undefined;
+    try {
+      const reputationMap = await fetchReputationScores();
+      // Find the anchor with rank=1 that serves this corridor (if any).
+      for (const [anchorId, entry] of reputationMap) {
+        if (entry.rank === 1) {
+          const routing = ANCHOR_ROUTING[corridorId];
+          if (routing && routing.anchorId === anchorId) {
+            topAnchorId = anchorId;
+          }
+          break;
+        }
+      }
+    } catch {
+      // Best-effort: proceed with default routing on failure.
+    }
+
+    const route = resolveRoute(intent.sourceAsset, intent.destinationAsset, topAnchorId);
 
     logger.info({
       event: 'intent_parsed',
       sourceAsset: intent.sourceAsset,
       destinationAsset: intent.destinationAsset,
+      topAnchorId: topAnchorId ?? null,
     });
 
     if (!route) {
