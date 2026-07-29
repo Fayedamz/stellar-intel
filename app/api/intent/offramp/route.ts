@@ -1,126 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import {
-  Asset,
-  Networks,
-  TransactionBuilder,
-  Operation,
-  Memo,
-  BASE_FEE,
-  Account,
-} from '@stellar/stellar-sdk';
-import { hashIntent } from '@/lib/intent/hash';
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit';
-import { USDC_ISSUER } from '@/lib/config';
 import { withRequestLogger } from '@/lib/logger';
 import { recordIntentError, recordIntentSuccess } from '@/lib/metrics';
-import { AMOUNT_PATTERN } from '@/lib/patterns';
+import { IntentSchema, createOfframpIntent } from '@/lib/intent/offramp';
 import type { Intent } from '@/lib/intent/hash';
 import type { ApiError } from '@/types';
-import { fetchReputationScores } from '@/lib/reputation/scores';
 
-// ─── Request schema ────────────────────────────────────────────────────────────
+// Response types now live with the shared core; re-exported for existing importers.
+export type { OfframpRoute, OfframpIntentResponse } from '@/lib/intent/offramp';
+import type { OfframpIntentResponse } from '@/lib/intent/offramp';
 
-const IntentSchema = z.object({
-  type: z.literal('offramp'),
-  sourceAsset: z.string().min(1),
-  destinationAsset: z.string().min(1),
-  amount: z.string().regex(AMOUNT_PATTERN, 'amount must be a positive decimal string'),
-  sender: z.string().min(1),
-  recipient: z.string().min(1),
-});
-
-// ─── Response types ────────────────────────────────────────────────────────────
-
-export interface OfframpRoute {
-  anchorId: string;
-  anchorDomain: string;
-  corridorId: string;
-  estimatedFee: string;
-  estimatedReceived: string;
-}
-
-export interface OfframpIntentResponse {
-  route: OfframpRoute;
-  unsignedTx: string;
-  quoteId: string;
-}
-
-// ─── Anchor routing (simple first-match by corridor) ──────────────────────────
-
-const ANCHOR_ROUTING: Record<
-  string,
-  { anchorId: string; anchorDomain: string; anchorAccount: string }
-> = {
-  'usdc-ngn': {
-    anchorId: 'cowrie',
-    anchorDomain: 'cowrie.exchange',
-    anchorAccount: 'GAIJ3VXNY7RPPLGVVCLGBK7NPHLL5ZRKATHETOA7M7UPZPAAHEGQQIY2',
-  },
-  'usdc-kes': {
-    anchorId: 'flutterwave',
-    anchorDomain: 'flutterwave.com',
-    anchorAccount: 'GC6PVZIZYHHROHYBBOZDJ5ZZI4RH6LDSHRT4K7BA5QGZFKMZ6HAZUQAK',
-  },
-};
-
-function resolveRoute(
-  sourceAsset: string,
-  destinationAsset: string,
-  topAnchorId?: string
-): OfframpRoute | null {
-  const corridorId = `${sourceAsset.toLowerCase()}-${destinationAsset.toLowerCase()}`;
-
-  // When a reputation-ranked anchor is provided for this corridor, prefer it
-  // over the static default — this is the #801 order-flow priority mechanism.
-  const preferredId = topAnchorId ?? null;
-  const anchor =
-    (preferredId && ANCHOR_ROUTING[corridorId] && ANCHOR_ROUTING[corridorId].anchorId === preferredId
-      ? ANCHOR_ROUTING[corridorId]
-      : null) ?? ANCHOR_ROUTING[corridorId];
-
-  if (!anchor) return null;
-  return {
-    anchorId: anchor.anchorId,
-    anchorDomain: anchor.anchorDomain,
-    corridorId,
-    estimatedFee: '2',
-    estimatedReceived: '0',
-  };
-}
-
-// ─── Unsigned transaction builder ─────────────────────────────────────────────
-
-function buildUnsignedOfframpTx(
-  senderPublicKey: string,
-  anchorAccount: string,
-  amount: string,
-  assetCode: string,
-  assetIssuer: string,
-  quoteId: string
-): string {
-  const asset = new Asset(assetCode, assetIssuer);
-  const account = new Account(senderPublicKey, '0');
-
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase: Networks.PUBLIC,
-  })
-    .addOperation(
-      Operation.payment({
-        destination: anchorAccount,
-        asset,
-        amount,
-      })
-    )
-    .addMemo(Memo.hash(Buffer.from(quoteId, 'hex')))
-    .setTimeout(300)
-    .build();
-
-  return tx.toXDR();
-}
-
-// ─── Route handler ────────────────────────────────────────────────────────────
+// ─── Internal route handler (unversioned; see /api/v1/intent/offramp for the
+// hardened public surface). Delegates the routing + tx assembly to the shared
+// `createOfframpIntent` core. ────────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   return withRequestLogger(request, 'api.intent.offramp', async (logger) => {
@@ -132,10 +24,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Too many requests', retryAfter: rl.retryAfter },
         {
           status: 429,
-          headers: {
-            'Retry-After': String(rl.retryAfter),
-            'X-RateLimit-Remaining': '0',
-          },
+          headers: { 'Retry-After': String(rl.retryAfter), 'X-RateLimit-Remaining': '0' },
         }
       );
     }
@@ -158,101 +47,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       logger.warn({ event: 'validation_failed', issues: parsed.error.issues });
       recordIntentError('VALIDATION_ERROR');
       return NextResponse.json<ApiError>(
-        {
-          code: 'VALIDATION_ERROR',
-          message: first?.message ?? 'Invalid intent payload',
-        },
+        { code: 'VALIDATION_ERROR', message: first?.message ?? 'Invalid intent payload' },
         { status: 400 }
       );
     }
 
     const intent = parsed.data as Intent;
-    const corridorId = `${intent.sourceAsset.toLowerCase()}-${intent.destinationAsset.toLowerCase()}`;
-
-    // Fetch reputation scores to prefer the top-ranked anchor for this
-    // corridor (#801). Failures are swallowed — routing must not be blocked
-    // by a store outage.
-    let topAnchorId: string | undefined;
-    try {
-      const reputationMap = await fetchReputationScores();
-      // Find the anchor with rank=1 that serves this corridor (if any).
-      for (const [anchorId, entry] of reputationMap) {
-        if (entry.rank === 1) {
-          const routing = ANCHOR_ROUTING[corridorId];
-          if (routing && routing.anchorId === anchorId) {
-            topAnchorId = anchorId;
-          }
-          break;
-        }
-      }
-    } catch {
-      // Best-effort: proceed with default routing on failure.
-    }
-
-    const route = resolveRoute(intent.sourceAsset, intent.destinationAsset, topAnchorId);
-
     logger.info({
       event: 'intent_parsed',
       sourceAsset: intent.sourceAsset,
       destinationAsset: intent.destinationAsset,
-      topAnchorId: topAnchorId ?? null,
     });
 
-    if (!route) {
+    const result = await createOfframpIntent(intent);
+    if (!result.ok) {
       logger.warn({
-        event: 'no_route',
-        sourceAsset: intent.sourceAsset,
-        destinationAsset: intent.destinationAsset,
+        event: result.code === 'NO_ROUTE' ? 'no_route' : 'tx_build_failed',
+        ...intent,
       });
-      recordIntentError('NO_ROUTE');
+      recordIntentError(result.code);
       return NextResponse.json<ApiError>(
-        {
-          code: 'NO_ROUTE',
-          message: `No route found for ${intent.sourceAsset} → ${intent.destinationAsset}`,
-        },
-        { status: 400 }
+        { code: result.code, message: result.message },
+        { status: result.status }
       );
     }
 
-    const quoteId = await hashIntent(intent);
-    const anchorEntry = ANCHOR_ROUTING[route.corridorId];
-
-    if (!anchorEntry) {
-      logger.error({ event: 'anchor_config_missing', corridorId: route.corridorId });
-      recordIntentError('NO_ROUTE');
-      return NextResponse.json<ApiError>(
-        { code: 'NO_ROUTE', message: 'Anchor configuration missing' },
-        { status: 400 }
-      );
-    }
-
-    let unsignedTx: string;
-    try {
-      unsignedTx = buildUnsignedOfframpTx(
-        intent.sender,
-        anchorEntry.anchorAccount,
-        intent.amount,
-        intent.sourceAsset,
-        USDC_ISSUER,
-        quoteId
-      );
-    } catch (err) {
-      logger.error({
-        event: 'tx_build_failed',
-        error: err instanceof Error ? err.message : 'Unknown error',
-      });
-      recordIntentError('TX_BUILD_FAILED');
-      return NextResponse.json<ApiError>(
-        {
-          code: 'TX_BUILD_FAILED',
-          message: err instanceof Error ? err.message : 'Failed to build transaction',
-        },
-        { status: 500 }
-      );
-    }
-
-    logger.info({ event: 'intent_response', corridorId: route.corridorId, quoteId });
+    logger.info({
+      event: 'intent_response',
+      corridorId: result.response.route.corridorId,
+      quoteId: result.response.quoteId,
+    });
     recordIntentSuccess();
-    return NextResponse.json<OfframpIntentResponse>({ route, unsignedTx, quoteId });
+    return NextResponse.json<OfframpIntentResponse>(result.response);
   });
 }

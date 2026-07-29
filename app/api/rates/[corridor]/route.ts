@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit';
 import { withRequestLogger } from '@/lib/logger';
-import { isValidCorridorId, isAnchorDegraded } from '@/lib/stellar/anchors';
-import { fetchCorridorRates } from '@/lib/stellar/server-rates';
+import { isValidCorridorId } from '@/lib/stellar/anchors';
 import { AMOUNT_PATTERN } from '@/lib/patterns';
-import { getCachedRate, setCachedRate, invalidateCachedRates } from '@/lib/api/rate-cache';
-import { recordRatesCacheHit, recordRatesCacheMiss } from '@/lib/metrics';
+import { resolveCorridorRates } from '@/lib/api/rates-resolver';
 
 // Live anchor calls must run per-request, never at build time.
 export const dynamic = 'force-dynamic';
@@ -63,31 +61,20 @@ export async function GET(
       pragma.includes('no-cache') ||
       url.searchParams.get('forceRefresh') === 'true';
 
-    const cached = forceRefresh ? undefined : getCachedRate(corridor, amount);
-    const hasHealthyCachedResult =
-      cached !== undefined && !cached.rates.some((rate) => isAnchorDegraded(rate.anchorId));
-
     // Hit/miss counters feed the /api/metrics snapshot (#737). A bypassed or
     // degraded-anchor lookup counts as a miss — it still costs an upstream fetch.
-    if (hasHealthyCachedResult) {
-      recordRatesCacheHit();
-    } else {
-      recordRatesCacheMiss();
-    }
+    const { comparison: result, servedFromCache } = await resolveCorridorRates(corridor, amount, {
+      forceRefresh,
+    });
 
-    let result = cached;
-    if (!result || !hasHealthyCachedResult) {
-      if (cached) {
-        for (const rate of cached.rates) {
-          if (isAnchorDegraded(rate.anchorId)) {
-            invalidateCachedRates(rate.anchorId);
-          }
-        }
-      }
-      result = await fetchCorridorRates(corridor, amount);
-      if (result.rates.length > 0) {
-        setCachedRate(corridor, amount, result);
-      }
+    if (servedFromCache) {
+      logger.info({
+        event: 'rates_served_from_cache',
+        corridor,
+        amount,
+        quoted: result.rates.length,
+      });
+    } else {
       logger.info({
         event: 'rates_fetched',
         corridor,
@@ -95,13 +82,6 @@ export async function GET(
         quoted: result.rates.length,
         failed: result.errors?.length ?? 0,
         forceRefresh,
-      });
-    } else {
-      logger.info({
-        event: 'rates_served_from_cache',
-        corridor,
-        amount,
-        quoted: result.rates.length,
       });
     }
 

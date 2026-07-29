@@ -53,7 +53,8 @@ function computeComposite(fillRate: number, settleP50: number, slippageP50: numb
 }
 
 function scoreLabel(score: number): { label: string; className: string } {
-  if (score >= 0.8) return { label: 'Excellent', className: 'text-emerald-700 dark:text-emerald-400' };
+  if (score >= 0.8)
+    return { label: 'Excellent', className: 'text-emerald-700 dark:text-emerald-400' };
   if (score >= 0.6) return { label: 'Good', className: 'text-blue-600 dark:text-blue-400' };
   if (score >= 0.4) return { label: 'Fair', className: 'text-yellow-600 dark:text-yellow-400' };
   return { label: 'Poor', className: 'text-red-600 dark:text-red-400' };
@@ -129,9 +130,7 @@ export default async function StandingsPage() {
     <main className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-8">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
-            Anchor standings
-          </h1>
+          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Anchor standings</h1>
           <Link
             href="/anchors"
             className="text-sm text-blue-600 hover:underline dark:text-blue-400"
@@ -147,9 +146,9 @@ export default async function StandingsPage() {
 
       {/* Scoring methodology callout */}
       <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-300">
-        <strong>How rankings work:</strong> Composite score = 40% fill rate + 30% slippage
-        (vs. 5% ceiling) + 30% settlement speed (vs. 5 min). Higher is better. Anchors with
-        insufficient data (fewer than 1 confirmed transaction) show a score of 0.{' '}
+        <strong>How rankings work:</strong> Composite score = 40% fill rate + 30% slippage (vs. 5%
+        ceiling) + 30% settlement speed (vs. 5 min). Higher is better. Anchors with insufficient
+        data (fewer than 1 confirmed transaction) show a score of 0.{' '}
         <Link href="/methodology" className="underline">
           Full methodology →
         </Link>
@@ -282,8 +281,8 @@ export default async function StandingsPage() {
 
       <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
         Rankings are based on a 30-day rolling window. Scores reflect only on-chain settled
-        transactions recorded in the Stellar Intel reputation store. Anchors with 0 samples have
-        not yet had transactions recorded and default to rank-bottom, not disqualified.
+        transactions recorded in the Stellar Intel reputation store. Anchors with 0 samples have not
+        yet had transactions recorded and default to rank-bottom, not disqualified.
       </p>
     </main>
   );
