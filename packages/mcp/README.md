@@ -9,8 +9,8 @@ and served over stdio.
 
 ## Status
 
-`createServer()` (`src/server.ts`) stands up the MCP server and registers two
-tools, both backed directly by
+`createServer()` (`src/server.ts`) stands up the MCP server and registers
+three tools, all backed directly by
 [`lib/mcp/offramp.ts`](https://github.com/ezedike-evan/stellar-intel/blob/main/lib/mcp/offramp.ts)
 in the main app (imported at build time — see below), so this package and the
 in-repo dev server at
@@ -25,6 +25,11 @@ share the exact same logic:
   currently be quoted.
 - `intel.offramp.prepare` — unsigned intent envelope + unsigned Stellar
   transaction for agent signing.
+- `intel.execute` — carries a prepared, agent-signed intent through to
+  execution. Verifies the signed transaction still matches the intent it was
+  prepared for, then submits it to Horizon; Stellar Intel never signs
+  anything — the calling agent's own wallet signs the intent hash and the
+  transaction before calling this tool.
 
 ### Build
 

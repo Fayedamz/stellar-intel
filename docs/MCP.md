@@ -43,6 +43,52 @@ an agent to sign. The `intentHash` is the canonical SHA-256 the agent signs.
   `{ type: "offramp", sourceAsset, destinationAsset, amount, sender, recipient }`
 - **Output:** `{ unsignedEnvelope: { intent, intentHash }, unsignedTx }`
 
+### `intel.execute` (#819)
+
+Carries a prepared intent through to signed execution. **Stellar Intel never
+signs anything here** — the non-custodial invariant holds all the way through:
+the calling agent signs `unsignedEnvelope.intentHash` (an off-chain attestation
+of consent) and the `unsignedTx` from `intel.offramp.prepare` (a real Stellar
+transaction signature) with its own wallet, entirely outside this server. This
+tool only verifies the signed material still matches the intent it was
+prepared for, then submits the transaction to Horizon.
+
+Verification, in order: the `intentHash` is recomputed from `intent` and must
+match; `signature` must verify against `intentHash` under `intent.sender`'s
+public key; the decoded `signedTx` must be signed, sourced from
+`intent.sender`, carry exactly one payment operation to the routed anchor
+account for `intent.amount`/`intent.sourceAsset`, and memo-hash `intentHash`.
+Any mismatch is rejected before anything reaches Horizon.
+
+- **Input:**
+  `{ unsignedEnvelope: { intent, intentHash }, signature, signedTx }` — the
+  exact `unsignedEnvelope` from `intel.offramp.prepare`, a base64 ed25519
+  signature over `intentHash` from the sender's key, and the base64 XDR of
+  `unsignedTx` after the sender has signed it.
+- **Output:** `{ status: "submitted", hash, ledger, corridorId, anchorId }`
+
+```jsonc
+// input
+{
+  "unsignedEnvelope": { "intent": { "type": "offramp", "..." }, "intentHash": "<64-hex>" },
+  "signature": "<base64 ed25519 sig over intentHash>",
+  "signedTx": "<base64 signed transaction XDR>"
+}
+// output
+{
+  "status": "submitted",
+  "hash": "<64-hex tx hash>",
+  "ledger": 12345,
+  "corridorId": "usdc-ngn",
+  "anchorId": "cowrie"
+}
+```
+
+Only the off-ramp intent surface is supported today, matching `quote`/`prepare`
+above. Per #819, broader intent types (beyond off-ramp) are deferred until the
+universal intent collapse work lands, so the tool doesn't ship off-ramp-only
+assumptions baked into a wider surface prematurely.
+
 ## Tests
 
 - `tests/mcp-offramp.spec.ts` — unit tests for both tool cores, including the
