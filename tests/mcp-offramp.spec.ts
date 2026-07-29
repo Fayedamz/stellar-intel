@@ -4,9 +4,28 @@
  * Runs in the Node environment (not jsdom): Keypair.random() relies on Node's
  * crypto for secure entropy, which jsdom does not provide.
  */
-import { describe, it, expect, vi } from 'vitest';
-import { Keypair } from '@stellar/stellar-sdk';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Keypair, TransactionBuilder, Networks } from '@stellar/stellar-sdk';
 import type { ServerRatesResult } from '@/lib/stellar/server-rates';
+
+// intel.execute submits to Horizon — stub only Horizon.Server.submitTransaction
+// so the real signature/tx-construction logic (Keypair, TransactionBuilder) is
+// still exercised, and no test hits the network.
+const submitTransaction = vi.fn();
+vi.mock('@stellar/stellar-sdk', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@stellar/stellar-sdk')>();
+  return {
+    ...actual,
+    Horizon: {
+      ...actual.Horizon,
+      Server: vi.fn().mockImplementation(function MockHorizonServer(this: {
+        submitTransaction: typeof submitTransaction;
+      }) {
+        this.submitTransaction = submitTransaction;
+      }),
+    },
+  };
+});
 
 // getQuote now sources live rates from fetchCorridorRates instead of a static
 // table — stub the network-hitting live-rate fetch so these tests stay fast
@@ -58,8 +77,10 @@ vi.mock('@/lib/stellar/server-rates', () => ({
 const {
   getQuote,
   prepareIntent,
+  executeIntent,
   QuoteOutputSchema,
   PrepareOutputSchema,
+  ExecuteOutputSchema,
   OfframpToolError,
   corridorId,
 } = await import('@/lib/mcp/offramp');
@@ -169,5 +190,160 @@ describe('intel.offramp.prepare (#136)', () => {
 
   it('rejects a malformed sender public key', async () => {
     await expect(prepareIntent({ ...validIntent, sender: 'not-a-key' })).rejects.toThrow();
+  });
+});
+
+describe('intel.execute (#819)', () => {
+  beforeEach(() => {
+    submitTransaction.mockClear();
+  });
+
+  const validIntent = {
+    type: 'offramp' as const,
+    sourceAsset: 'USDC',
+    destinationAsset: 'NGN',
+    amount: '100',
+    recipient: 'recipient-123',
+  };
+
+  /** Prepares an intent for `kp`, then agent-signs both the hash and the tx, mirroring what a real caller does. */
+  async function prepareAndSign(kp: InstanceType<typeof Keypair>) {
+    const intent = { ...validIntent, sender: kp.publicKey() };
+    const { unsignedEnvelope, unsignedTx } = await prepareIntent(intent);
+
+    const signature = kp.sign(Buffer.from(unsignedEnvelope.intentHash, 'utf8')).toString('base64');
+
+    const tx = TransactionBuilder.fromXDR(unsignedTx, Networks.PUBLIC);
+    tx.sign(kp);
+
+    return { unsignedEnvelope, signedTx: tx.toXDR(), signature };
+  }
+
+  it('verifies and submits a correctly signed intent', async () => {
+    const kp = Keypair.random();
+    const { unsignedEnvelope, signedTx, signature } = await prepareAndSign(kp);
+
+    submitTransaction.mockResolvedValueOnce({
+      hash: 'a'.repeat(64),
+      ledger: 12345,
+      successful: true,
+      envelope_xdr: '',
+      result_xdr: '',
+      result_meta_xdr: '',
+      paging_token: '',
+    });
+
+    const result = await executeIntent({ unsignedEnvelope, signature, signedTx });
+    expect(() => ExecuteOutputSchema.parse(result)).not.toThrow();
+    expect(result).toEqual({
+      status: 'submitted',
+      hash: 'a'.repeat(64),
+      ledger: 12345,
+      corridorId: 'usdc-ngn',
+      anchorId: 'cowrie',
+    });
+    expect(submitTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws INTENT_HASH_MISMATCH when the hash does not match the intent', async () => {
+    const kp = Keypair.random();
+    const { unsignedEnvelope, signedTx, signature } = await prepareAndSign(kp);
+
+    await expect(
+      executeIntent({
+        unsignedEnvelope: { ...unsignedEnvelope, intentHash: 'f'.repeat(64) },
+        signature,
+        signedTx,
+      })
+    ).rejects.toMatchObject({ code: 'INTENT_HASH_MISMATCH' });
+    expect(submitTransaction).not.toHaveBeenCalled();
+  });
+
+  it('throws SIGNATURE_INVALID for a bogus signature', async () => {
+    const kp = Keypair.random();
+    const { unsignedEnvelope, signedTx } = await prepareAndSign(kp);
+
+    await expect(
+      executeIntent({
+        unsignedEnvelope,
+        signature: Buffer.from('not-a-real-signature').toString('base64'),
+        signedTx,
+      })
+    ).rejects.toMatchObject({ code: 'SIGNATURE_INVALID' });
+    expect(submitTransaction).not.toHaveBeenCalled();
+  });
+
+  it('throws SIGNATURE_INVALID when the signature comes from a different key', async () => {
+    const kp = Keypair.random();
+    const other = Keypair.random();
+    const { unsignedEnvelope, signedTx } = await prepareAndSign(kp);
+    const wrongSignature = other
+      .sign(Buffer.from(unsignedEnvelope.intentHash, 'utf8'))
+      .toString('base64');
+
+    await expect(
+      executeIntent({ unsignedEnvelope, signature: wrongSignature, signedTx })
+    ).rejects.toMatchObject({ code: 'SIGNATURE_INVALID' });
+  });
+
+  it('throws UNSIGNED_TX when signedTx still has no signatures', async () => {
+    const kp = Keypair.random();
+    const intent = { ...validIntent, sender: kp.publicKey() };
+    const { unsignedEnvelope, unsignedTx } = await prepareIntent(intent);
+    const signature = kp.sign(Buffer.from(unsignedEnvelope.intentHash, 'utf8')).toString('base64');
+
+    await expect(
+      executeIntent({ unsignedEnvelope, signature, signedTx: unsignedTx })
+    ).rejects.toMatchObject({ code: 'UNSIGNED_TX' });
+    expect(submitTransaction).not.toHaveBeenCalled();
+  });
+
+  it('throws TX_MISMATCH when the signed tx amount does not match the intent', async () => {
+    const kp = Keypair.random();
+    const { unsignedEnvelope, signature } = await prepareAndSign(kp);
+
+    // Prepare a different (larger-amount) tx for the same sender/corridor, sign
+    // that instead — simulates an agent submitting the wrong transaction.
+    const other = await prepareIntent({ ...validIntent, sender: kp.publicKey(), amount: '200' });
+    const tamperedTx = TransactionBuilder.fromXDR(other.unsignedTx, Networks.PUBLIC);
+    tamperedTx.sign(kp);
+
+    await expect(
+      executeIntent({ unsignedEnvelope, signature, signedTx: tamperedTx.toXDR() })
+    ).rejects.toMatchObject({ code: 'TX_MISMATCH' });
+    expect(submitTransaction).not.toHaveBeenCalled();
+  });
+
+  it('throws NO_ROUTE for an unsupported corridor', async () => {
+    const kp = Keypair.random();
+    const intent = { ...validIntent, sender: kp.publicKey(), destinationAsset: 'ZZZ' };
+    // hashIntent/prepareIntent both reject ZZZ via NO_ROUTE before a tx can be
+    // built, so construct the envelope by hand to reach executeIntent's own
+    // NO_ROUTE check.
+    const { hashIntent } = await import('@/lib/intent/hash');
+    const intentHash = await hashIntent(intent as unknown as import('@/lib/intent/hash').Intent);
+    const signature = kp.sign(Buffer.from(intentHash, 'utf8')).toString('base64');
+
+    await expect(
+      executeIntent({
+        unsignedEnvelope: { intent, intentHash },
+        signature,
+        signedTx: 'AAAAAA==',
+      })
+    ).rejects.toMatchObject({ code: 'NO_ROUTE' });
+  });
+
+  it('throws SUBMIT_FAILED with Horizon result codes when submission fails', async () => {
+    const kp = Keypair.random();
+    const { unsignedEnvelope, signedTx, signature } = await prepareAndSign(kp);
+
+    submitTransaction.mockRejectedValueOnce({
+      response: { data: { extras: { result_codes: { transaction: ['tx_bad_seq'] } } } },
+    });
+
+    await expect(executeIntent({ unsignedEnvelope, signature, signedTx })).rejects.toMatchObject({
+      code: 'SUBMIT_FAILED',
+      message: expect.stringContaining('tx_bad_seq'),
+    });
   });
 });
