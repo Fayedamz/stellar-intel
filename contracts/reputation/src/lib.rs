@@ -10,6 +10,7 @@ pub mod publishers;
 pub mod history;
 pub mod score;
 pub mod upgrade;
+pub mod corridor_rate;
 
 #[contracterror]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -21,6 +22,7 @@ pub enum Error {
     PublisherExists       = 5,
     PublisherNotFound     = 6,
     PublisherUnauthorized = 7,
+    InvalidCorridorRate   = 8,
 }
 
 #[contract]
@@ -47,6 +49,29 @@ impl ReputationContract {
 
     pub fn admin(env: Env) -> Option<Address> {
         admin::get_admin(&env)
+    }
+
+    /// Step 1 of a safe admin handoff: nominate `candidate` as the next admin.
+    /// The change is not live until `candidate` calls `accept_admin`.
+    pub fn propose_admin(env: Env, caller: Address, candidate: Address) -> Result<(), Error> {
+        admin::propose_admin(&env, &caller, &candidate)
+    }
+
+    /// Step 2 of a safe admin handoff: `candidate` accepts the pending proposal
+    /// and becomes the new admin.
+    pub fn accept_admin(env: Env, candidate: Address) -> Result<(), Error> {
+        admin::accept_admin(&env, &candidate)
+    }
+
+    /// Cancel a pending admin proposal without transferring authority.
+    /// Only the current admin may call this.
+    pub fn cancel_admin_proposal(env: Env, caller: Address) -> Result<(), Error> {
+        admin::cancel_admin_proposal(&env, &caller)
+    }
+
+    /// Return the pending admin candidate, if any.
+    pub fn pending_admin(env: Env) -> Option<Address> {
+        admin::get_pending_admin(&env)
     }
 
     pub fn add_publisher(
@@ -136,5 +161,22 @@ impl ReputationContract {
         n: u32,
     ) {
         score::set_corridor_metrics(&env, anchor_id, corridor, fill_rate_bps, slippage_bps, settle_seconds_p50, n);
+    }
+
+    /// Publish (or overwrite) the block-level rate for a corridor (issue #810).
+    /// Publisher-only; `rate` is scaled by 10^`decimals` fiat units per 1 USDC.
+    pub fn publish_corridor_rate(
+        env: Env,
+        publisher: Address,
+        corridor: String,
+        rate: i128,
+        decimals: u32,
+    ) -> Result<(), Error> {
+        corridor_rate::publish(&env, &publisher, corridor, rate, decimals)
+    }
+
+    /// Read the latest published rate for `corridor`, or `None` if unset.
+    pub fn get_corridor_rate(env: Env, corridor: String) -> Option<corridor_rate::CorridorRate> {
+        corridor_rate::get(&env, corridor)
     }
 }
