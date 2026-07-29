@@ -50,12 +50,7 @@ function quoteRow(domain: string, corridor: string, latencyMs: number): ProbeLed
 
 describe('buildSdfAnchorDirectoryExport', () => {
   it('reports unknown status with no health record and no probe samples', () => {
-    const report = buildSdfAnchorDirectoryExport(
-      [ANCHOR],
-      new Map(),
-      new Map(),
-      () => NOW
-    );
+    const report = buildSdfAnchorDirectoryExport([ANCHOR], new Map(), new Map(), () => NOW);
 
     expect(report.schemaVersion).toBe(SDF_EXPORT_SCHEMA_VERSION);
     expect(report.generatedAt).toBe(NOW.toISOString());
