@@ -16,13 +16,10 @@ const FOOTER_COLUMNS = [
   {
     title: 'Docs',
     links: [
-      { href: `${REPO_URL}#readme`, label: 'Overview', external: true },
-      { href: `${REPO_URL}/blob/main/docs/FAQ.md`, label: 'FAQ', external: true },
-      {
-        href: `${REPO_URL}/blob/main/docs/ARCHITECTURE.md`,
-        label: 'Architecture',
-        external: true,
-      },
+      { href: '/docs', label: 'Developer Portal' },
+      { href: '/docs/quickstart', label: 'Quickstart' },
+      { href: '/docs/api', label: 'API Reference' },
+      { href: '/docs/sdks', label: 'SDKs' },
     ],
   },
   {
