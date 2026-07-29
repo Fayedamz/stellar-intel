@@ -93,18 +93,21 @@ function parseCron(expression: string): CronFields {
 }
 
 function nextCronAfter(fields: CronFields, after: Date): Date {
+  // Cron fields are matched in UTC: schedules are stored and executed as UTC
+  // instants, so matching against local time would shift every execution by the
+  // host's offset.
   const candidate = new Date(after);
-  candidate.setSeconds(0, 0);
-  candidate.setMinutes(candidate.getMinutes() + 1); // start just after 'after'
+  candidate.setUTCSeconds(0, 0);
+  candidate.setUTCMinutes(candidate.getUTCMinutes() + 1); // start just after 'after'
 
   const maxIter = 366 * 24 * 60; // safety limit: 1 year of minutes
 
   for (let i = 0; i < maxIter; i++) {
-    const m = candidate.getMonth() + 1;
-    const d = candidate.getDate();
-    const h = candidate.getHours();
-    const min = candidate.getMinutes();
-    const dow = candidate.getDay();
+    const m = candidate.getUTCMonth() + 1;
+    const d = candidate.getUTCDate();
+    const h = candidate.getUTCHours();
+    const min = candidate.getUTCMinutes();
+    const dow = candidate.getUTCDay();
 
     if (
       fields.month.includes(m) &&
@@ -116,7 +119,7 @@ function nextCronAfter(fields: CronFields, after: Date): Date {
       return candidate;
     }
 
-    candidate.setMinutes(candidate.getMinutes() + 1);
+    candidate.setUTCMinutes(candidate.getUTCMinutes() + 1);
   }
 
   throw new Error('Could not compute next cron execution within safety limit');
@@ -179,10 +182,7 @@ export function isStopDatePassed(stopDate: string | undefined, now: Date = new D
 /**
  * Check if the maximum number of cycles has been reached.
  */
-export function isMaxCyclesReached(
-  executedCycles: number,
-  maxCycles: number | undefined
-): boolean {
+export function isMaxCyclesReached(executedCycles: number, maxCycles: number | undefined): boolean {
   if (maxCycles === undefined) return false;
   return executedCycles >= maxCycles;
 }
@@ -193,8 +193,7 @@ export function isMaxCyclesReached(
 export function isValidCadence(cadence: string): boolean {
   if (NAMED_NAMES.includes(cadence as CadenceNamed)) return true;
 
-  const cronRegex =
-    /^[\d*,\/-]+\s+[\d*,\/-]+\s+[\d*,\/-]+\s+[\d*,\/-]+\s+[\d*,\/-]+$/;
+  const cronRegex = /^[\d*,\/-]+\s+[\d*,\/-]+\s+[\d*,\/-]+\s+[\d*,\/-]+\s+[\d*,\/-]+$/;
   if (!cronRegex.test(cadence)) return false;
 
   try {

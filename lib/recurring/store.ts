@@ -7,11 +7,7 @@
  * Designed to be swappable for a durable store (SQLite/Postgres) in the future.
  */
 
-import type {
-  RecurringIntent,
-  RecurringIntentStatus,
-  RecurringExecution,
-} from '@/types/recurring';
+import type { RecurringIntent, RecurringIntentStatus, RecurringExecution } from '@/types/recurring';
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -72,9 +68,7 @@ export function setRecurringIntentStatus(
 /**
  * List all recurring intents matching an optional status filter.
  */
-export function listRecurringIntents(
-  status?: RecurringIntentStatus
-): RecurringIntent[] {
+export function listRecurringIntents(status?: RecurringIntentStatus): RecurringIntent[] {
   const all = Array.from(recurringIntents.values()).map((r) => ({ ...r }));
 
   if (!status) return all;
@@ -122,9 +116,7 @@ export function getExecutions(recurringIntentId: string): RecurringExecution[] {
 /**
  * Get the latest execution record for a recurring intent.
  */
-export function getLatestExecution(
-  recurringIntentId: string
-): RecurringExecution | undefined {
+export function getLatestExecution(recurringIntentId: string): RecurringExecution | undefined {
   const history = executions.get(recurringIntentId);
   if (!history || history.length === 0) return undefined;
   return { ...history[history.length - 1]! };

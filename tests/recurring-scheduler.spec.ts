@@ -6,7 +6,13 @@ import {
   computeSlippageBps,
   MAX_CONSECUTIVE_SKIPS,
 } from '@/lib/recurring/scheduler';
-import { initRecurringStore, registerRecurringIntent, getRecurringIntent, getExecutions, updateRecurringIntent } from '@/lib/recurring/store';
+import {
+  initRecurringStore,
+  registerRecurringIntent,
+  getRecurringIntent,
+  getExecutions,
+  updateRecurringIntent,
+} from '@/lib/recurring/store';
 import { RecurringIntentSchema } from '@/types/recurring';
 import type { RecurringIntent, CycleEvaluationInput } from '@/types/recurring';
 

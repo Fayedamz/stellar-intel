@@ -316,7 +316,8 @@ export function executeCycle(
     cycleNumber: ri.executedCycles + ri.skippedCycles + ri.failedCycles + 1,
     scheduledAt: ri.nextExecutionAt,
     attemptedAt: now.toISOString(),
-    status: result.action === 'execute' ? 'executed' : result.action === 'skip' ? 'skipped' : 'failed',
+    status:
+      result.action === 'execute' ? 'executed' : result.action === 'skip' ? 'skipped' : 'failed',
   };
 
   if (result.action === 'execute' && result.ok) {

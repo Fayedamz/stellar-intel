@@ -191,7 +191,9 @@ describe('Recurring Intent Store', () => {
 
       registerRecurringIntent(makeRecurringIntent({ id: 'ri-001', nextExecutionAt: pastExec }));
       registerRecurringIntent(makeRecurringIntent({ id: 'ri-002', nextExecutionAt: futureExec }));
-      registerRecurringIntent(makeRecurringIntent({ id: 'ri-003', nextExecutionAt: pastExec, status: 'paused' }));
+      registerRecurringIntent(
+        makeRecurringIntent({ id: 'ri-003', nextExecutionAt: pastExec, status: 'paused' })
+      );
 
       const due = listDueIntents();
       expect(due.length).toBe(1);

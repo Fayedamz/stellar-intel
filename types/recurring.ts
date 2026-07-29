@@ -18,10 +18,12 @@ export type CadenceNamed = 'daily' | 'weekly' | 'biweekly' | 'monthly';
  */
 export const CadenceSchema = z.union([
   z.enum(['daily', 'weekly', 'biweekly', 'monthly']),
-  z.string().regex(
-    /^(\*|[0-9,-\/]+)\s+(\*|[0-9,-\/]+)\s+(\*|[0-9,-\/]+)\s+(\*|[0-9,-\/]+)\s+(\*|[0-9,-\/]+)$/,
-    { message: 'Must be a valid 5-field cron expression (min hr dom mon dow)' }
-  ),
+  z
+    .string()
+    .regex(
+      /^(\*|[0-9,-\/]+)\s+(\*|[0-9,-\/]+)\s+(\*|[0-9,-\/]+)\s+(\*|[0-9,-\/]+)\s+(\*|[0-9,-\/]+)$/,
+      { message: 'Must be a valid 5-field cron expression (min hr dom mon dow)' }
+    ),
 ]);
 
 export type Cadence = z.infer<typeof CadenceSchema>;
@@ -75,12 +77,7 @@ export const RecurringIntentSchema = z.object({
    * by more than this, the cycle is skipped.
    * Default: 200 (2%).
    */
-  maxSlippageBps: z
-    .number()
-    .int()
-    .min(0)
-    .max(10000)
-    .default(200),
+  maxSlippageBps: z.number().int().min(0).max(10000).default(200),
   /**
    * Hard floor on the exchange rate (local currency units per 1 sell asset).
    * If no quote meets or exceeds this floor, the cycle is skipped.

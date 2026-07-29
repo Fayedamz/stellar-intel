@@ -81,9 +81,9 @@ describe('computeNextExecutionAt — cron expressions', () => {
     // 2026-07-01 is a Wednesday. Next Monday is 2026-07-06.
     const after = new Date('2026-07-01T00:00:00Z');
     const next = computeNextExecutionAt('0 10 * * 1', after);
-    expect(next.getDay()).toBe(1); // Monday
-    expect(next.getHours()).toBe(10);
-    expect(next.getMinutes()).toBe(0);
+    expect(next.getUTCDay()).toBe(1); // Monday
+    expect(next.getUTCHours()).toBe(10);
+    expect(next.getUTCMinutes()).toBe(0);
   });
 
   it('every 15 minutes: "*/15 * * * *"', () => {

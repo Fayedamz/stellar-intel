@@ -21,7 +21,7 @@ The Stellar network itself supports a limited pre-authorisation concept via:
 - **`timeBounds`** on a `Transaction` — the transaction is only valid within a window (`minTime` / `maxTime`). The user signs once; the signed blob can be submitted any time within the window.
 - **`minLedger` / `maxLedger`** — ledger-based bounds.
 
-**Limitation for recurring intents:** This works for a *single* future execution, not an open-ended recurring series. The user must pre-compute and sign every occurrence, which defeats the purpose.
+**Limitation for recurring intents:** This works for a _single_ future execution, not an open-ended recurring series. The user must pre-compute and sign every occurrence, which defeats the purpose.
 
 ### 2.2 Soroban smart-wallet signer policies
 
@@ -35,6 +35,7 @@ Soroban smart contracts enable custom account contracts (smart wallets) that can
 **Relevant standard:** [SEP-41](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0041.md) (Soroban Smart Wallet Standard) defines a baseline interface for smart wallets, including `__check_auth` and signer introspection.
 
 **Limitation:** SEP-41 is still a draft. No mainstream wallet (Freighter, Lobstr) exposes a UI for configuring custom signer policies today. Adoption requires:
+
 1. The ecosystem to converge on SEP-41 (or an equivalent).
 2. Wallets to implement a policy-configuration UI.
 3. A relayer / keeper network to submit the recurring intents on schedule.
@@ -44,11 +45,12 @@ Soroban smart contracts enable custom account contracts (smart wallets) that can
 SEP-10 provides a challenge–response authentication flow that yields a time-limited JWT. This is already used by Stellar Intel for anchor sessions.
 
 **Relevance:** A recurring intent could piggyback on SEP-10:
+
 - The user authenticates once via Freighter (SEP-10 challenge).
 - The server issues a long-lived JWT (or a refresh token) scoped to a specific recurring intent policy.
 - The server can then sign repeat intents on the user's behalf within the JWT's scope.
 
-**Limitation:** This deviates from the non-custodial principle — the server holds a token that authorises recurring actions. The JWT must be carefully scoped (specific corridor, max amount, expiry) and stored encrypted. This is *pragmatic* but not *pure* self-custody.
+**Limitation:** This deviates from the non-custodial principle — the server holds a token that authorises recurring actions. The JWT must be carefully scoped (specific corridor, max amount, expiry) and stored encrypted. This is _pragmatic_ but not _pure_ self-custody.
 
 ### 2.4 Off-chain signature delegation (EIP-2612 / permit style)
 
@@ -58,20 +60,20 @@ In EVM land, ERC-2612 (permit) allows a user to sign a structured message off-ch
 - The permit encodes the spender, amount, deadline, and a nonce.
 - The contract verifies the Ed25519 signature and updates internal allowance state.
 
-This is not standardised for Stellar today but is *buildable* as a custom Soroban contract.
+This is not standardised for Stellar today but is _buildable_ as a custom Soroban contract.
 
 ---
 
 ## 3. Wallet support matrix
 
-| Wallet         | SEP-10 support | Smart wallet (SEP-41) | Pre-auth txn UI | Recurring / policy UI | Notes |
-|----------------|----------------|-----------------------|-----------------|-----------------------|-------|
-| **Freighter**  | ✅ Full        | ❌ Not exposed       | ❌ No UI        | ❌ No UI              | Active development on Soroban support; policy UI is on their roadmap but unscheduled. |
-| **Lobstr**     | ✅ Full        | ❌ Not exposed       | ❌ No UI        | ❌ No UI              | Vault feature supports time-locked transactions but not recurring policies. |
-| **xBull**      | ✅ Full        | ❌ Not exposed       | ❌ No UI        | ❌ No UI              | Similar to Freighter; Soroban support is experimental. |
-| **Albedo**     | ❌ (uses own)  | ❌                    | ❌              | ❌                    | No Soroban wallet support yet. |
-| **Rabet**      | ✅ Full        | ❌ Not exposed       | ❌ No UI        | ❌ No UI              | Minimal Soroban support. |
-| **Solar Wallet**| ❌            | ❌                    | ❌              | ❌                    | Desktop-only; no Soroban wallet support. |
+| Wallet           | SEP-10 support | Smart wallet (SEP-41) | Pre-auth txn UI | Recurring / policy UI | Notes                                                                                 |
+| ---------------- | -------------- | --------------------- | --------------- | --------------------- | ------------------------------------------------------------------------------------- |
+| **Freighter**    | ✅ Full        | ❌ Not exposed        | ❌ No UI        | ❌ No UI              | Active development on Soroban support; policy UI is on their roadmap but unscheduled. |
+| **Lobstr**       | ✅ Full        | ❌ Not exposed        | ❌ No UI        | ❌ No UI              | Vault feature supports time-locked transactions but not recurring policies.           |
+| **xBull**        | ✅ Full        | ❌ Not exposed        | ❌ No UI        | ❌ No UI              | Similar to Freighter; Soroban support is experimental.                                |
+| **Albedo**       | ❌ (uses own)  | ❌                    | ❌              | ❌                    | No Soroban wallet support yet.                                                        |
+| **Rabet**        | ✅ Full        | ❌ Not exposed        | ❌ No UI        | ❌ No UI              | Minimal Soroban support.                                                              |
+| **Solar Wallet** | ❌             | ❌                    | ❌              | ❌                    | Desktop-only; no Soroban wallet support.                                              |
 
 **Key takeaway:** No wallet today offers a recurring pre-authorisation UI. SEP-10 JWTs are the only production-ready mechanism.
 
@@ -119,4 +121,4 @@ The sign-once execution engine (the follow-up implementation issue) should:
 1. **Phase 1 (now):** Build the SEP-10 JWT delegation path — add a `recurring_intents` table to the database, a JWT scope claim validator, and a cron-like scheduler.
 2. **Phase 2 (future):** When SEP-41 wallet support lands, add an optional Soroban-based signer policy backend and let the user choose between the two.
 
-This separation lets the product ship recurring intents *now* while keeping the door open to a fully non-custodial path later.
+This separation lets the product ship recurring intents _now_ while keeping the door open to a fully non-custodial path later.
