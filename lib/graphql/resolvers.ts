@@ -10,7 +10,7 @@ import {
 } from '@/lib/stellar/anchors';
 import { resolveCorridorRates } from '@/lib/api/rates-resolver';
 import { getPublisherHealth, getMetricsSnapshot } from '@/lib/metrics';
-import { IntentSchema, OfframpIntentError, resolveOfframpIntent } from '@/lib/api/offramp-intent';
+import { IntentSchema, createOfframpIntent } from '@/lib/intent/offramp';
 import { AMOUNT_PATTERN } from '@/lib/patterns';
 import type { Anchor, AnchorRate } from '@/types';
 import type { Intent } from '@/lib/intent/hash';
@@ -107,14 +107,11 @@ async function resolveSubmitOfframpIntent(
     });
   }
 
-  try {
-    return await resolveOfframpIntent(parsed.data as Intent);
-  } catch (err) {
-    if (err instanceof OfframpIntentError) {
-      throw createGraphQLError(err.message, { extensions: { code: err.code } });
-    }
-    throw err;
+  const result = await createOfframpIntent(parsed.data as Intent);
+  if (!result.ok) {
+    throw createGraphQLError(result.message, { extensions: { code: result.code } });
   }
+  return result.response;
 }
 
 export const resolvers = {

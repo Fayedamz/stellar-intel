@@ -2,18 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit';
 import { withRequestLogger } from '@/lib/logger';
 import { recordIntentError, recordIntentSuccess } from '@/lib/metrics';
-import {
-  IntentSchema,
-  OfframpIntentError,
-  resolveOfframpIntent,
-  type OfframpIntentResponse,
-} from '@/lib/api/offramp-intent';
+import { IntentSchema, createOfframpIntent } from '@/lib/intent/offramp';
 import type { Intent } from '@/lib/intent/hash';
 import type { ApiError } from '@/types';
 
-export type { OfframpRoute, OfframpIntentResponse } from '@/lib/api/offramp-intent';
+// Response types now live with the shared core; re-exported for existing importers.
+export type { OfframpRoute, OfframpIntentResponse } from '@/lib/intent/offramp';
+import type { OfframpIntentResponse } from '@/lib/intent/offramp';
 
-// ─── Route handler ────────────────────────────────────────────────────────────
+// ─── Internal route handler (unversioned; see /api/v1/intent/offramp for the
+// hardened public surface). Delegates the routing + tx assembly to the shared
+// `createOfframpIntent` core. ────────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   return withRequestLogger(request, 'api.intent.offramp', async (logger) => {
@@ -25,10 +24,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Too many requests', retryAfter: rl.retryAfter },
         {
           status: 429,
-          headers: {
-            'Retry-After': String(rl.retryAfter),
-            'X-RateLimit-Remaining': '0',
-          },
+          headers: { 'Retry-After': String(rl.retryAfter), 'X-RateLimit-Remaining': '0' },
         }
       );
     }
@@ -51,46 +47,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       logger.warn({ event: 'validation_failed', issues: parsed.error.issues });
       recordIntentError('VALIDATION_ERROR');
       return NextResponse.json<ApiError>(
-        {
-          code: 'VALIDATION_ERROR',
-          message: first?.message ?? 'Invalid intent payload',
-        },
+        { code: 'VALIDATION_ERROR', message: first?.message ?? 'Invalid intent payload' },
         { status: 400 }
       );
     }
 
     const intent = parsed.data as Intent;
-
     logger.info({
       event: 'intent_parsed',
       sourceAsset: intent.sourceAsset,
       destinationAsset: intent.destinationAsset,
     });
 
-    let response: OfframpIntentResponse;
-    try {
-      response = await resolveOfframpIntent(intent);
-    } catch (err) {
-      if (err instanceof OfframpIntentError) {
-        const status = err.code === 'TX_BUILD_FAILED' ? 500 : 400;
-        logger.warn({
-          event: err.code === 'NO_ROUTE' ? 'no_route' : 'tx_build_failed',
-          sourceAsset: intent.sourceAsset,
-          destinationAsset: intent.destinationAsset,
-          error: err.message,
-        });
-        recordIntentError(err.code);
-        return NextResponse.json<ApiError>({ code: err.code, message: err.message }, { status });
-      }
-      throw err;
+    const result = await createOfframpIntent(intent);
+    if (!result.ok) {
+      logger.warn({
+        event: result.code === 'NO_ROUTE' ? 'no_route' : 'tx_build_failed',
+        ...intent,
+      });
+      recordIntentError(result.code);
+      return NextResponse.json<ApiError>(
+        { code: result.code, message: result.message },
+        { status: result.status }
+      );
     }
 
     logger.info({
       event: 'intent_response',
-      corridorId: response.route.corridorId,
-      quoteId: response.quoteId,
+      corridorId: result.response.route.corridorId,
+      quoteId: result.response.quoteId,
     });
     recordIntentSuccess();
-    return NextResponse.json<OfframpIntentResponse>(response);
+    return NextResponse.json<OfframpIntentResponse>(result.response);
   });
 }
