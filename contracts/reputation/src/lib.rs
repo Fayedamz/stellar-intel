@@ -49,6 +49,29 @@ impl ReputationContract {
         admin::get_admin(&env)
     }
 
+    /// Step 1 of a safe admin handoff: nominate `candidate` as the next admin.
+    /// The change is not live until `candidate` calls `accept_admin`.
+    pub fn propose_admin(env: Env, caller: Address, candidate: Address) -> Result<(), Error> {
+        admin::propose_admin(&env, &caller, &candidate)
+    }
+
+    /// Step 2 of a safe admin handoff: `candidate` accepts the pending proposal
+    /// and becomes the new admin.
+    pub fn accept_admin(env: Env, candidate: Address) -> Result<(), Error> {
+        admin::accept_admin(&env, &candidate)
+    }
+
+    /// Cancel a pending admin proposal without transferring authority.
+    /// Only the current admin may call this.
+    pub fn cancel_admin_proposal(env: Env, caller: Address) -> Result<(), Error> {
+        admin::cancel_admin_proposal(&env, &caller)
+    }
+
+    /// Return the pending admin candidate, if any.
+    pub fn pending_admin(env: Env) -> Option<Address> {
+        admin::get_pending_admin(&env)
+    }
+
     pub fn add_publisher(
         env: Env,
         caller: Address,
