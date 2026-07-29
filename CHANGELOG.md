@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- `docs/ROADMAP.md`: new "v6 Ecosystem Infrastructure" section covering the 7 items epic #808 parked (Rust SDK, webhooks, GraphQL, developer portal, multi-corridor oracle v2, on-chain savings oracle, versioning policy, decentralization), each linked to its now-filed child issue (#868-#875). #808 cited a "Horizon 3" section that no longer exists in the roadmap after it moved from an H1/H2/H3 structure to the current v1-v5 wave structure; this section reconciles that drift instead of leaving the epic pointing at removed content.
 - `StatusTracker`: when `stellar_transaction_id` is a valid 64-char hex, render a link to `{STELLAR_EXPERT_URL}/tx/{id}` opening in a new tab (`target="_blank" rel="noopener noreferrer"`) ([#47](https://github.com/Ezedike-Evan/stellar-intel/issues/47))
 - `lib/reporter`: pluggable error reporter with noop default; wire via `configureReporter()` at app startup (#184)
 
