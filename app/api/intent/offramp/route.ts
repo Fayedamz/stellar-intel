@@ -1,120 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import {
-  Asset,
-  Networks,
-  TransactionBuilder,
-  Operation,
-  Memo,
-  BASE_FEE,
-  Account,
-} from '@stellar/stellar-sdk';
-import { hashIntent } from '@/lib/intent/hash';
-import { USDC_ISSUER } from '@/lib/config';
+import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit';
 import { withRequestLogger } from '@/lib/logger';
 import { recordIntentError, recordIntentSuccess } from '@/lib/metrics';
-import { CanonicalIntentV1Schema } from '@/types/intent';
+import { IntentSchema, createOfframpIntent } from '@/lib/intent/offramp';
 import type { Intent } from '@/lib/intent/hash';
 import type { ApiError } from '@/types';
 
-// ─── Request schema ────────────────────────────────────────────────────────────
+// Response types now live with the shared core; re-exported for existing importers.
+export type { OfframpRoute, OfframpIntentResponse } from '@/lib/intent/offramp';
+import type { OfframpIntentResponse } from '@/lib/intent/offramp';
 
-// Legacy clients send `type: 'offramp'` instead of `kind`. Map it so the
-// discriminated union can validate it. If neither field is present, the union
-// rejects the payload (missing discriminant) as a VALIDATION_ERROR.
-const IntentSchema = z.preprocess((raw) => {
-  if (!raw || typeof raw !== 'object') return raw;
-  const obj = raw as Record<string, unknown>;
-  if ('kind' in obj) return obj;
-  if ('type' in obj) {
-    const { type, ...rest } = obj;
-    return { kind: type, ...rest };
-  }
-  return obj;
-}, CanonicalIntentV1Schema);
-
-// ─── Response types ────────────────────────────────────────────────────────────
-
-export interface OfframpRoute {
-  anchorId: string;
-  anchorDomain: string;
-  corridorId: string;
-  estimatedFee: string;
-  estimatedReceived: string;
-}
-
-export interface OfframpIntentResponse {
-  route: OfframpRoute;
-  unsignedTx: string;
-  quoteId: string;
-}
-
-// ─── Anchor routing (simple first-match by corridor) ──────────────────────────
-
-const ANCHOR_ROUTING: Record<
-  string,
-  { anchorId: string; anchorDomain: string; anchorAccount: string }
-> = {
-  'usdc-ngn': {
-    anchorId: 'cowrie',
-    anchorDomain: 'cowrie.exchange',
-    anchorAccount: 'GAIJ3VXNY7RPPLGVVCLGBK7NPHLL5ZRKATHETOA7M7UPZPAAHEGQQIY2',
-  },
-  'usdc-kes': {
-    anchorId: 'flutterwave',
-    anchorDomain: 'flutterwave.com',
-    anchorAccount: 'GC6PVZIZYHHROHYBBOZDJ5ZZI4RH6LDSHRT4K7BA5QGZFKMZ6HAZUQAK',
-  },
-};
-
-function resolveRoute(sourceAsset: string, destinationAsset: string): OfframpRoute | null {
-  const corridorId = `${sourceAsset.toLowerCase()}-${destinationAsset.toLowerCase()}`;
-  const anchor = ANCHOR_ROUTING[corridorId];
-  if (!anchor) return null;
-  return {
-    anchorId: anchor.anchorId,
-    anchorDomain: anchor.anchorDomain,
-    corridorId,
-    estimatedFee: '2',
-    estimatedReceived: '0',
-  };
-}
-
-// ─── Unsigned transaction builder ─────────────────────────────────────────────
-
-function buildUnsignedOfframpTx(
-  senderPublicKey: string,
-  anchorAccount: string,
-  amount: string,
-  assetCode: string,
-  assetIssuer: string,
-  quoteId: string
-): string {
-  const asset = new Asset(assetCode, assetIssuer);
-  const account = new Account(senderPublicKey, '0');
-
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase: Networks.PUBLIC,
-  })
-    .addOperation(
-      Operation.payment({
-        destination: anchorAccount,
-        asset,
-        amount,
-      })
-    )
-    .addMemo(Memo.hash(Buffer.from(quoteId, 'hex')))
-    .setTimeout(300)
-    .build();
-
-  return tx.toXDR();
-}
-
-// ─── Route handler ────────────────────────────────────────────────────────────
+// ─── Internal route handler (unversioned; see /api/v1/intent/offramp for the
+// hardened public surface). Delegates the routing + tx assembly to the shared
+// `createOfframpIntent` core. ────────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   return withRequestLogger(request, 'api.intent.offramp', async (logger) => {
+    const ip = getClientIp(request.headers);
+    const rl = checkRateLimit(ip, { bucket: 'api.intent.offramp', maxRequests: 20 });
+    if (!rl.allowed) {
+      logger.warn({ event: 'rate_limit_exceeded', ip, retryAfter: rl.retryAfter });
+      return NextResponse.json(
+        { error: 'Too many requests', retryAfter: rl.retryAfter },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rl.retryAfter), 'X-RateLimit-Remaining': '0' },
+        }
+      );
+    }
+
     let body: unknown;
     try {
       body = await request.json();
@@ -133,89 +47,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       logger.warn({ event: 'validation_failed', issues: parsed.error.issues });
       recordIntentError('VALIDATION_ERROR');
       return NextResponse.json<ApiError>(
-        {
-          code: 'VALIDATION_ERROR',
-          message: first?.message ?? 'Invalid intent payload',
-        },
+        { code: 'VALIDATION_ERROR', message: first?.message ?? 'Invalid intent payload' },
         { status: 400 }
       );
     }
 
-    if (parsed.data.kind !== 'offramp') {
-      logger.warn({ event: 'unsupported_kind', kind: parsed.data.kind });
-      return NextResponse.json<ApiError>(
-        {
-          code: 'NOT_IMPLEMENTED',
-          message: `${parsed.data.kind} intents are not yet handled by this endpoint`,
-        },
-        { status: 501 }
-      );
-    }
-
-    const intent = parsed.data as unknown as Intent;
-    const route = resolveRoute(intent.sourceAsset, intent.destinationAsset);
-
+    const intent = parsed.data as Intent;
     logger.info({
       event: 'intent_parsed',
       sourceAsset: intent.sourceAsset,
       destinationAsset: intent.destinationAsset,
     });
 
-    if (!route) {
+    const result = await createOfframpIntent(intent);
+    if (!result.ok) {
       logger.warn({
-        event: 'no_route',
-        sourceAsset: intent.sourceAsset,
-        destinationAsset: intent.destinationAsset,
+        event: result.code === 'NO_ROUTE' ? 'no_route' : 'tx_build_failed',
+        ...intent,
       });
-      recordIntentError('NO_ROUTE');
+      recordIntentError(result.code);
       return NextResponse.json<ApiError>(
-        {
-          code: 'NO_ROUTE',
-          message: `No route found for ${intent.sourceAsset} → ${intent.destinationAsset}`,
-        },
-        { status: 400 }
+        { code: result.code, message: result.message },
+        { status: result.status }
       );
     }
 
-    const quoteId = await hashIntent(intent);
-    const anchorEntry = ANCHOR_ROUTING[route.corridorId];
-
-    if (!anchorEntry) {
-      logger.error({ event: 'anchor_config_missing', corridorId: route.corridorId });
-      recordIntentError('NO_ROUTE');
-      return NextResponse.json<ApiError>(
-        { code: 'NO_ROUTE', message: 'Anchor configuration missing' },
-        { status: 400 }
-      );
-    }
-
-    let unsignedTx: string;
-    try {
-      unsignedTx = buildUnsignedOfframpTx(
-        intent.sender,
-        anchorEntry.anchorAccount,
-        intent.amount,
-        intent.sourceAsset,
-        USDC_ISSUER,
-        quoteId
-      );
-    } catch (err) {
-      logger.error({
-        event: 'tx_build_failed',
-        error: err instanceof Error ? err.message : 'Unknown error',
-      });
-      recordIntentError('TX_BUILD_FAILED');
-      return NextResponse.json<ApiError>(
-        {
-          code: 'TX_BUILD_FAILED',
-          message: err instanceof Error ? err.message : 'Failed to build transaction',
-        },
-        { status: 500 }
-      );
-    }
-
-    logger.info({ event: 'intent_response', corridorId: route.corridorId, quoteId });
+    logger.info({
+      event: 'intent_response',
+      corridorId: result.response.route.corridorId,
+      quoteId: result.response.quoteId,
+    });
     recordIntentSuccess();
-    return NextResponse.json<OfframpIntentResponse>({ route, unsignedTx, quoteId });
+    return NextResponse.json<OfframpIntentResponse>(result.response);
   });
 }

@@ -1,6 +1,6 @@
 import type { AnchorRate } from '@/types';
 
-export type RateSortKey = 'rate' | 'fee' | 'receive';
+export type RateSortKey = 'rate' | 'fee' | 'receive' | 'reputation';
 export type SortDirection = 'asc' | 'desc';
 
 export interface SortState {
@@ -12,6 +12,12 @@ const FIELD_ACCESSORS: Record<RateSortKey, (rate: AnchorRate) => number | null> 
   rate: (r) => r.exchangeRate,
   fee: (r) => r.fee,
   receive: (r) => r.totalReceived,
+  /**
+   * Reputation rank is 1-based where 1 = best. We negate it so that
+   * ascending sort (default for reputation) puts rank-1 at the top.
+   * Absent reputationRank sorts to the bottom.
+   */
+  reputation: (r) => (r.reputationRank != null ? -r.reputationRank : null),
 };
 
 /** Cycles a column's sort state: unsorted -> ascending -> descending -> unsorted. */

@@ -75,7 +75,6 @@ describe('solveSingleAnchor', () => {
 
     it('selects the quote with the highest buy_amount among multiple valid quotes', () => {
       const intent = createTestIntent({ minReceive: '1500' });
-      const futureISO = new Date(Date.now() + 300 * 1000).toISOString();
 
       const quotes = [
         createTestQuote({
@@ -102,13 +101,163 @@ describe('solveSingleAnchor', () => {
         }),
       ];
 
-      const result = solveSingleAnchor(intent, quotes);
+      const result = solveSingleAnchor(intent, quotes, undefined, undefined, 'scored');
 
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.plan.quoteId).toBe('quote-002');
         expect(result.plan.netAmount).toBe('152000');
         expect(result.plan.anchorName).toBe('Anchor B');
+      }
+    });
+
+    it('selects the first eligible quote under the first-match strategy', () => {
+      const intent = createTestIntent({ minReceive: '1500' });
+
+      const quotes = [
+        createTestQuote({
+          id: 'quote-001',
+          anchorName: 'Anchor A',
+          buy_amount: '150000',
+          netAmount: '150000',
+        }),
+        createTestQuote({
+          id: 'quote-002',
+          anchorName: 'Anchor B',
+          buy_amount: '152000', // better rate, but the flag is off
+          netAmount: '152000',
+          price: '1520',
+          total_price: '1520',
+        }),
+      ];
+
+      const result = solveSingleAnchor(intent, quotes, undefined, undefined, 'first-match');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.plan.quoteId).toBe('quote-001');
+        expect(result.plan.anchorName).toBe('Anchor A');
+      }
+    });
+
+    it('ignores scoring inputs when the strategy is first-match', () => {
+      const intent = createTestIntent({ minReceive: '1500' });
+
+      const quotes = [
+        createTestQuote({
+          id: 'quote-001',
+          anchorId: 'anchor-a',
+          anchorName: 'Anchor A',
+          buy_amount: '150000',
+          netAmount: '150000',
+        }),
+        createTestQuote({
+          id: 'quote-002',
+          anchorId: 'anchor-b',
+          anchorName: 'Anchor B',
+          buy_amount: '152000',
+          netAmount: '152000',
+          price: '1520',
+          total_price: '1520',
+        }),
+      ];
+
+      const scoring = {
+        anchorMetrics: {
+          'anchor-a': { reliability: 0.1, latencyMs: 1900, reputationComposite: 0.1 },
+          'anchor-b': { reliability: 1.0, latencyMs: 50, reputationComposite: 1.0 },
+        },
+      };
+
+      const result = solveSingleAnchor(intent, quotes, undefined, scoring, 'first-match');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.plan.quoteId).toBe('quote-001');
+      }
+    });
+
+    it('defaults to the ROUTING_STRATEGY flag value (scored by default)', () => {
+      const intent = createTestIntent({ minReceive: '1500' });
+
+      const quotes = [
+        createTestQuote({
+          id: 'quote-001',
+          anchorName: 'Anchor A',
+          buy_amount: '150000',
+          netAmount: '150000',
+        }),
+        createTestQuote({
+          id: 'quote-002',
+          anchorName: 'Anchor B',
+          buy_amount: '152000',
+          netAmount: '152000',
+          price: '1520',
+          total_price: '1520',
+        }),
+      ];
+
+      const result = solveSingleAnchor(intent, quotes);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.plan.quoteId).toBe('quote-002');
+      }
+    });
+
+    it('selects the correct highest-scored anchor given a fixture set of anchors with varying rate, reliability, and latency', () => {
+      const intent = createTestIntent({ minReceive: '140000' });
+
+      const quotes = [
+        createTestQuote({
+          id: 'quote-flaky-high-rate',
+          anchorId: 'flaky-anchor',
+          anchorName: 'Flaky High Rate Anchor',
+          buy_amount: '150000',
+          netAmount: '150000',
+        }),
+        createTestQuote({
+          id: 'quote-fast-reliable',
+          anchorId: 'reliable-anchor',
+          anchorName: 'Fast & Reliable Anchor',
+          buy_amount: '149000',
+          netAmount: '149000',
+        }),
+        createTestQuote({
+          id: 'quote-slow-medium',
+          anchorId: 'slow-anchor',
+          anchorName: 'Slow Anchor',
+          buy_amount: '145000',
+          netAmount: '145000',
+        }),
+      ];
+
+      const scoring = {
+        anchorMetrics: {
+          'flaky-anchor': {
+            reliability: 0.5,
+            latencyMs: 1500,
+            reputationComposite: 0.4,
+          },
+          'reliable-anchor': {
+            reliability: 0.99,
+            latencyMs: 100,
+            reputationComposite: 0.95,
+          },
+          'slow-anchor': {
+            reliability: 0.8,
+            latencyMs: 2200,
+            reputationComposite: 0.7,
+          },
+        },
+      };
+
+      const result = solveSingleAnchor(intent, quotes, 10, scoring);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.plan.anchorId).toBe('reliable-anchor');
+        expect(result.plan.quoteId).toBe('quote-fast-reliable');
       }
     });
   });
@@ -466,7 +615,7 @@ describe('solveSingleAnchor', () => {
           },
         };
 
-        const result = solveSingleAnchor(intent, quotes, 10, scoring);
+        const result = solveSingleAnchor(intent, quotes, 10, scoring, 'scored');
 
         expect(result.ok).toBe(true);
         if (result.ok) {
@@ -516,7 +665,7 @@ describe('solveSingleAnchor', () => {
           },
         };
 
-        const result = solveSingleAnchor(intent, quotes, 10, scoring);
+        const result = solveSingleAnchor(intent, quotes, 10, scoring, 'scored');
 
         expect(result.ok).toBe(true);
         if (result.ok) {

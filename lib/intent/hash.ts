@@ -1,5 +1,6 @@
 /** A minimal off-ramp intent that can be deterministically hashed. */
 export interface Intent {
+  type: string;
   sourceAsset: string;
   destinationAsset: string;
   amount: string;

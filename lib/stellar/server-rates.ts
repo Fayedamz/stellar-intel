@@ -7,6 +7,7 @@ import { getSep24Info } from './sep24';
 import { getSep6Info } from './sep6';
 import { getUsdFxRate } from '@/lib/fx/rates';
 import { SepError, TimeoutError } from './errors';
+import { fetchReputationScores } from '@/lib/reputation/scores';
 
 /**
  * Per-anchor diagnostic. When an anchor fails to quote we keep the reason so the
@@ -362,6 +363,31 @@ export async function fetchCorridorRates(
   if (rates.length > 0) {
     const best = rates.reduce((a, b) => ((b.totalReceived ?? 0) > (a.totalReceived ?? 0) ? b : a));
     bestRateId = best.anchorId;
+  }
+
+  // Annotate each rate with reputation score and rank (#801).
+  // Failures are swallowed — a store outage must not break the rate response.
+  try {
+    const reputationMap = await fetchReputationScores();
+    for (const rate of rates) {
+      const entry = reputationMap.get(rate.anchorId);
+      if (entry) {
+        rate.reputationScore = entry.score;
+        rate.reputationRank = entry.rank;
+      }
+    }
+
+    // Re-sort rates: top-ranked (by reputation) first, then by net received for
+    // anchors with identical or absent reputation scores. Lower-ranked anchors are
+    // preserved in the list and remain selectable; they just appear further down.
+    rates.sort((a, b) => {
+      const rankA = a.reputationRank ?? Number.MAX_SAFE_INTEGER;
+      const rankB = b.reputationRank ?? Number.MAX_SAFE_INTEGER;
+      if (rankA !== rankB) return rankA - rankB;
+      return (b.totalReceived ?? 0) - (a.totalReceived ?? 0);
+    });
+  } catch {
+    // Reputation annotation is best-effort — leave rates unsorted on failure.
   }
 
   return { corridorId, rates, pending: [], bestRateId, errors };

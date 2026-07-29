@@ -459,10 +459,13 @@ pub fn get_admin(env: &Env) -> Option<Address>;
 
 Two client libraries ship alongside the contract:
 
-- `contracts/reputation/sdk-rs/` — Rust consumer for other Soroban contracts
-  (`read_aggregate` helper, typed structs). _(planned)_
+- [`crates/stellar-intel-reputation/`](../crates/stellar-intel-reputation/) —
+  Rust consumer for other Soroban contracts (`read_aggregate`/`corridor_score`/
+  `corridor_aggregate` helpers, typed structs). Publish-ready (`publish = true`,
+  full crates.io metadata); the actual `cargo publish` awaits a maintainer
+  adding a `CARGO_REGISTRY_TOKEN` secret (`.github/workflows/publish-rust-sdk.yml`).
 - `packages/sdk/oracle.ts` — TypeScript consumer for off-chain readers
-  (wallets, rival aggregators, dashboards).
+  (wallets, rival aggregators, dashboards). _(planned)_
 
 ---
 
@@ -551,6 +554,7 @@ stellar-intel/
 │   └── useTheme.ts                # ✅
 ├── lib/
 │   ├── config.ts                  # ✅ env-guarded config
+│   ├── analytics.ts               # ✅ funnel event tracking + PII redaction
 │   ├── utils.ts                   # ✅ computeTotalReceived, format helpers
 │   └── stellar/
 │       ├── anchors.ts             # ✅ registry (MoneyGram, Cowrie, Anclap)
@@ -582,7 +586,8 @@ stellar-intel/
 │   ├── THREAT_MODEL.md            # adversaries + mitigations
 │   ├── NON_CUSTODY.md             # custody manifesto
 │   ├── JURISDICTIONAL.md          # money-transmission memo
-│   └── SECURITY.md                # disclosure policy
+│   ├── SECURITY.md                # disclosure policy
+│   └── ANALYTICS.md               # funnel dashboard + event taxonomy
 └── .github/workflows/             # ✅ ci, codeql, lighthouse, data-health, …
 ```
 
