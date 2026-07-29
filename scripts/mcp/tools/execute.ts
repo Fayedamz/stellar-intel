@@ -22,13 +22,13 @@ const inputShape = {
     .string()
     .min(1)
     .describe(
-      'Base64 ed25519 signature over unsignedEnvelope.intentHash, produced by the sender\'s own wallet'
+      "Base64 ed25519 signature over unsignedEnvelope.intentHash, produced by the sender's own wallet"
     ),
   signedTx: z
     .string()
     .min(1)
     .describe(
-      'Base64 XDR of the unsignedTx from intel.offramp.prepare, signed by the sender\'s own wallet'
+      "Base64 XDR of the unsignedTx from intel.offramp.prepare, signed by the sender's own wallet"
     ),
 };
 

@@ -355,7 +355,12 @@ export async function executeIntent(input: ExecuteInput): Promise<ExecuteOutput>
 
   const [operation, ...rest] = tx.operations;
   const payment = operation as
-    | { type: string; destination?: string; amount?: string; asset?: { code: string; issuer: string } }
+    | {
+        type: string;
+        destination?: string;
+        amount?: string;
+        asset?: { code: string; issuer: string };
+      }
     | undefined;
   // Amount comes back from XDR normalized to Stellar's fixed 7dp representation
   // (e.g. "100" -> "100.0000000"), so compare numerically rather than as strings.

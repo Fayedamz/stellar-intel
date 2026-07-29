@@ -211,9 +211,7 @@ describe('intel.execute (#819)', () => {
     const intent = { ...validIntent, sender: kp.publicKey() };
     const { unsignedEnvelope, unsignedTx } = await prepareIntent(intent);
 
-    const signature = kp
-      .sign(Buffer.from(unsignedEnvelope.intentHash, 'utf8'))
-      .toString('base64');
+    const signature = kp.sign(Buffer.from(unsignedEnvelope.intentHash, 'utf8')).toString('base64');
 
     const tx = TransactionBuilder.fromXDR(unsignedTx, Networks.PUBLIC);
     tx.sign(kp);
@@ -292,9 +290,7 @@ describe('intel.execute (#819)', () => {
     const kp = Keypair.random();
     const intent = { ...validIntent, sender: kp.publicKey() };
     const { unsignedEnvelope, unsignedTx } = await prepareIntent(intent);
-    const signature = kp
-      .sign(Buffer.from(unsignedEnvelope.intentHash, 'utf8'))
-      .toString('base64');
+    const signature = kp.sign(Buffer.from(unsignedEnvelope.intentHash, 'utf8')).toString('base64');
 
     await expect(
       executeIntent({ unsignedEnvelope, signature, signedTx: unsignedTx })
