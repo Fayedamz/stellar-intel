@@ -22,7 +22,6 @@ function createTestIntent(overrides?: Partial<Intent>): Intent {
 function createTestQuote(overrides: Partial<EvaluatedQuote> & { id: string }): EvaluatedQuote {
   const futureISO = new Date(Date.now() + 300 * 1000).toISOString();
   return {
-    id: overrides.id,
     price: '1500',
     total_price: '1500',
     sell_amount: '100',

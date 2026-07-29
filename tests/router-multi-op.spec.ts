@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { Keypair, Networks, TransactionBuilder, BASE_FEE, Operation } from '@stellar/stellar-sdk';
+import {
+  Keypair,
+  Networks,
+  Transaction,
+  TransactionBuilder,
+  BASE_FEE,
+  Operation,
+} from '@stellar/stellar-sdk';
 import { buildMultiAnchorWithdrawTx } from '@/lib/router/multi-op';
 
 const SENDER = Keypair.random().publicKey();
@@ -23,7 +30,7 @@ describe('buildMultiAnchorWithdrawTx (#800)', () => {
       { destination: ANCHOR_B, amount: '40' },
     ]);
 
-    const tx = TransactionBuilder.fromXDR(xdr, Networks.PUBLIC);
+    const tx = TransactionBuilder.fromXDR(xdr, Networks.PUBLIC) as Transaction;
     expect(tx.operations).toHaveLength(2);
     expect(tx.source).toBe(SENDER);
 
