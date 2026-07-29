@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowDownRight, Globe, Landmark, Route } from 'lucide-react';
+import { ArrowDownRight, Globe, Landmark, Route, BookOpen, Code } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Hero } from '@/components/landing/Hero';
 import { StatBar } from '@/components/landing/StatBar';
@@ -138,6 +138,43 @@ export default function HomePage() {
       {/* Explainer */}
       <LandingSection delay={300}>
         <FeatureGrid features={HOW_IT_WORKS_STEPS} />
+      </LandingSection>
+
+      {/* For Developers */}
+      <LandingSection delay={325}>
+        <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
+          For Developers
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Link
+            href="/docs"
+            className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
+          >
+            <div className="group h-full cursor-pointer rounded-xl border border-border bg-background p-5 transition-shadow hover:shadow-md dark:hover:shadow-gray-900/50">
+              <div className="mb-4 inline-flex rounded-lg bg-blue-50 p-2.5 dark:bg-blue-900/40">
+                <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="mb-2 font-semibold text-gray-900 dark:text-white">Developer Portal</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                API reference, quickstart guides, authentication, and integration docs for wallets, agents, and third-party apps.
+              </p>
+            </div>
+          </Link>
+          <Link
+            href="/docs/api"
+            className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
+          >
+            <div className="group h-full cursor-pointer rounded-xl border border-border bg-background p-5 transition-shadow hover:shadow-md dark:hover:shadow-gray-900/50">
+              <div className="mb-4 inline-flex rounded-lg bg-purple-50 p-2.5 dark:bg-purple-900/40">
+                <Code className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="mb-2 font-semibold text-gray-900 dark:text-white">Interactive API</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Try every endpoint live with the interactive API playground — no setup required.
+              </p>
+            </div>
+          </Link>
+        </div>
       </LandingSection>
 
       {/* FAQ */}
