@@ -15,7 +15,16 @@ import { getLogger } from '@/lib/logger';
 import { resolveToml } from '@/lib/stellar/sep1';
 import { getCorridorById } from '@/lib/stellar/anchors';
 import { assertSep38Capable, getSep38Price } from '@/lib/stellar/sep38';
-import { DRIFT_THRESHOLD_PERCENT, isDrifted } from './thresholds';
+import {
+  DEGRADE_AFTER_FAILURES,
+  DOWN_AFTER_FAILURES,
+  DRIFT_THRESHOLD_PERCENT,
+  LATENCY_BUDGET_MS,
+  healthStatusFor,
+  isDegradingTransition,
+  isDrifted,
+  type AnchorHealthStatus,
+} from './thresholds';
 import { ANCHORS } from '@/constants/anchors';
 import type { ProbeFailureType } from '@/types/reputation';
 import type { Anchor } from '@/types';
@@ -632,3 +641,203 @@ export function quoteLatencyPercentiles(
   return { p50Ms: rank(50), p95Ms: rank(95), sampleCount: windowed.length };
 }
 
+// ─── Probe-failure alerting (Issue #D016) ──────────────────────────────────────
+//
+// The probes above each answer one question about an anchor; this turns their
+// per-cycle verdicts into a single composite health status and alerts when that
+// status degrades. The debounce is the same consecutive-failure rule the
+// nightly auto-degrade ledger uses (see `lib/reputation/thresholds.ts`), so one
+// flaky cycle never pages anyone and a latched status never re-alerts.
+
+/** The probe dimensions that feed an anchor's composite health status. */
+export const PROBE_DIMENSIONS = ['uptime', 'latency', 'drift'] as const;
+export type ProbeDimension = (typeof PROBE_DIMENSIONS)[number];
+
+/** One anchor's results from a single probe cycle. Every dimension is optional — a cycle that didn't run a probe can't fail it. */
+export interface ProbeCycle {
+  /** Uptime probe sample (`probeAnchor`). */
+  uptime?: ProbeSample | undefined;
+  /** Quote-latency samples for this anchor (`probeQuoteLatency`), one per corridor. */
+  latency?: readonly ProbeSample[] | undefined;
+  /** This anchor's row from the cycle's `detectQuoteDrift` comparison. */
+  drift?: DriftSample | undefined;
+}
+
+/**
+ * Which dimensions failed in one cycle: `uptime` when the stellar.toml probe
+ * was unreachable, `latency` when any quote sample was unreachable or busted
+ * the round-trip budget, `drift` when the anchor's quote was flagged
+ * off-median. Returned in `PROBE_DIMENSIONS` order so alert payloads are
+ * stable regardless of which probe reported first.
+ */
+export function failingDimensions(
+  cycle: ProbeCycle,
+  latencyBudgetMs: number = LATENCY_BUDGET_MS
+): ProbeDimension[] {
+  const failing = new Set<ProbeDimension>();
+  if (cycle.uptime && !cycle.uptime.reachable) failing.add('uptime');
+  for (const sample of cycle.latency ?? []) {
+    if (!sample.reachable || sample.latencyMs > latencyBudgetMs) failing.add('latency');
+  }
+  if (cycle.drift?.flagged) failing.add('drift');
+  return PROBE_DIMENSIONS.filter((d) => failing.has(d));
+}
+
+/** A composite health status crossing into a worse state. */
+export interface HealthAlert {
+  anchorId: string;
+  /** Status before this cycle. */
+  from: AnchorHealthStatus;
+  /** Status after this cycle; always strictly worse than `from`. */
+  to: AnchorHealthStatus;
+  /** Every dimension that failed at some point during the streak that tripped the transition, in `PROBE_DIMENSIONS` order. */
+  dimensions: ProbeDimension[];
+  /** Length of the consecutive-failure streak when the transition fired. */
+  consecutiveFailures: number;
+  /** Epoch milliseconds when the alert was raised. */
+  at: number;
+}
+
+/**
+ * Injected sink for health-degradation alerts. Left as a seam so this module
+ * stays free of a concrete alerting dependency, mirroring the publisher's
+ * `AlertHook` (#D014) — wire it to Sentry, a pager, or the ledger writer.
+ */
+export type HealthAlertHook = (alert: HealthAlert) => void | Promise<void>;
+
+/** Tuning for `AnchorHealthTracker`; every field defaults to `lib/reputation/thresholds.ts`. */
+export interface HealthTrackerOptions {
+  /** Consecutive failing cycles before `healthy` → `degraded`. */
+  degradeAfter?: number;
+  /** Consecutive failing cycles before escalating to `down`. */
+  downAfter?: number;
+  /** Quote round-trip budget (ms) for the latency dimension. */
+  latencyBudgetMs?: number;
+  /** Called once per degrading transition. */
+  onAlert?: HealthAlertHook;
+  /** Monotonic-ish millisecond clock. Defaults to `Date.now`. */
+  now?: () => number;
+}
+
+/** An anchor's tracked health, shaped to match the nightly ledger's `AnchorHealth`. */
+export interface AnchorHealthState {
+  status: AnchorHealthStatus;
+  /** Consecutive failing cycles; reset to 0 by any clean cycle. */
+  consecutiveFailures: number;
+  /** Dimensions that failed during the current streak; empty when healthy. */
+  dimensions: ProbeDimension[];
+}
+
+/**
+ * Debounced per-anchor health state machine over probe cycles.
+ *
+ * Feed it one cycle per anchor per run: a failing cycle extends the anchor's
+ * streak, a clean one resets it. The streak length maps to a composite status
+ * via `healthStatusFor`, and an alert fires only when that status crosses into
+ * a strictly worse state — so N-1 consecutive failures stay silent, the Nth
+ * raises exactly one alert naming the failing dimension(s), and further
+ * failures at the same level raise none. Recovery clears the streak silently;
+ * this path alerts on degradation only.
+ */
+export class AnchorHealthTracker {
+  private readonly states = new Map<string, AnchorHealthState>();
+  private readonly degradeAfter: number;
+  private readonly downAfter: number;
+  private readonly latencyBudgetMs: number;
+  private readonly onAlert: HealthAlertHook | undefined;
+  private readonly now: () => number;
+
+  constructor(options: HealthTrackerOptions = {}) {
+    this.degradeAfter = options.degradeAfter ?? DEGRADE_AFTER_FAILURES;
+    this.downAfter = options.downAfter ?? DOWN_AFTER_FAILURES;
+    this.latencyBudgetMs = options.latencyBudgetMs ?? LATENCY_BUDGET_MS;
+    this.onAlert = options.onAlert;
+    this.now = options.now ?? Date.now;
+  }
+
+  /** Feed one probe cycle for one anchor. Returns the alert raised, or `null`. */
+  async observe(anchorId: string, cycle: ProbeCycle): Promise<HealthAlert | null> {
+    return this.observeFailures(anchorId, failingDimensions(cycle, this.latencyBudgetMs));
+  }
+
+  /**
+   * Lower-level entry point for callers that already know which dimensions
+   * failed (e.g. a dimension this module doesn't model yet).
+   */
+  async observeFailures(
+    anchorId: string,
+    failing: readonly ProbeDimension[]
+  ): Promise<HealthAlert | null> {
+    const prev = this.statusOf(anchorId);
+
+    if (failing.length === 0) {
+      this.states.set(anchorId, { status: 'healthy', consecutiveFailures: 0, dimensions: [] });
+      if (prev.status !== 'healthy') {
+        logger.info(
+          { event: 'probe.health.recovered', anchorId, from: prev.status },
+          'anchor recovered to healthy'
+        );
+      }
+      return null;
+    }
+
+    const streakDimensions = PROBE_DIMENSIONS.filter(
+      (d) => prev.dimensions.includes(d) || failing.includes(d)
+    );
+    const consecutiveFailures = prev.consecutiveFailures + 1;
+    const status = healthStatusFor(consecutiveFailures, this.degradeAfter, this.downAfter);
+    this.states.set(anchorId, { status, consecutiveFailures, dimensions: streakDimensions });
+
+    if (!isDegradingTransition(prev.status, status)) {
+      logger.debug(
+        {
+          event: 'probe.health.failure',
+          anchorId,
+          status,
+          consecutiveFailures,
+          dimensions: failing,
+        },
+        'probe cycle failed but health status is unchanged'
+      );
+      return null;
+    }
+
+    const alert: HealthAlert = {
+      anchorId,
+      from: prev.status,
+      to: status,
+      dimensions: streakDimensions,
+      consecutiveFailures,
+      at: this.now(),
+    };
+    logger.warn(
+      {
+        event: 'probe.health.transition',
+        anchorId,
+        from: alert.from,
+        to: alert.to,
+        dimensions: alert.dimensions,
+        consecutiveFailures,
+      },
+      `anchor health degraded to ${status} (${alert.dimensions.join(', ')})`
+    );
+    await this.onAlert?.(alert);
+    return alert;
+  }
+
+  /** Current tracked health for an anchor; unseen anchors read as healthy with no streak. */
+  statusOf(anchorId: string): AnchorHealthState {
+    const state = this.states.get(anchorId);
+    if (!state) return { status: 'healthy', consecutiveFailures: 0, dimensions: [] };
+    return { ...state, dimensions: [...state.dimensions] };
+  }
+
+  /** Every tracked anchor's health, keyed by anchor id — the shape the auto-degrade ledger consumes. */
+  snapshot(): Record<string, AnchorHealthState> {
+    const out: Record<string, AnchorHealthState> = {};
+    for (const anchorId of this.states.keys()) {
+      out[anchorId] = this.statusOf(anchorId);
+    }
+    return out;
+  }
+}

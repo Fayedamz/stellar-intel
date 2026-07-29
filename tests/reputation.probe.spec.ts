@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
+  AnchorHealthTracker,
+  failingDimensions,
   InMemoryProbeStore,
   probeAnchor,
   runProbe,
@@ -16,7 +18,11 @@ import {
   type AnchorQuote,
   type RateProbeResult,
   type QuoteProbeResult,
+  type DriftSample,
+  type HealthAlert,
+  type ProbeSample,
 } from '@/lib/reputation/probe';
+import { healthStatusFor, isDegradingTransition } from '@/lib/reputation/thresholds';
 import type { Anchor } from '@/types';
 
 /** Deterministic clock: returns `start`, then advances by `step` each call. */
@@ -416,5 +422,257 @@ describe('quote-latency probe', () => {
   it('returns null when an anchor+corridor has no reachable quote samples', () => {
     const store = new InMemoryProbeStore();
     expect(quoteLatencyPercentiles('unknown.example', 'usdc-ngn', store)).toBeNull();
+  });
+});
+
+describe('probe-failure alerting', () => {
+  const upSample = (latencyMs = 100): ProbeSample => ({
+    domain: 'anchor.example',
+    reachable: true,
+    latencyMs,
+    at: 0,
+    failureType: null,
+  });
+  const downSample = (): ProbeSample => ({
+    domain: 'anchor.example',
+    reachable: false,
+    latencyMs: 0,
+    at: 0,
+    failureType: 'timeout',
+    error: 'ETIMEDOUT',
+  });
+  const driftSample = (flagged: boolean): DriftSample => ({
+    anchorId: 'anchor-1',
+    corridor: 'usdc-ngn',
+    rate: 1,
+    medianRate: 1,
+    deviationPercent: flagged ? 10 : 0,
+    flagged,
+    at: 0,
+  });
+
+  describe('health thresholds', () => {
+    it('latches degraded then down as the failure streak grows', () => {
+      expect(healthStatusFor(0, 3, 6)).toBe('healthy');
+      expect(healthStatusFor(2, 3, 6)).toBe('healthy');
+      expect(healthStatusFor(3, 3, 6)).toBe('degraded');
+      expect(healthStatusFor(5, 3, 6)).toBe('degraded');
+      expect(healthStatusFor(6, 3, 6)).toBe('down');
+    });
+
+    it('never makes down easier to reach than degraded when misconfigured', () => {
+      expect(healthStatusFor(2, 3, 1)).toBe('healthy');
+      expect(healthStatusFor(3, 3, 1)).toBe('down');
+    });
+
+    it('treats only worsening transitions as alertable', () => {
+      expect(isDegradingTransition('healthy', 'degraded')).toBe(true);
+      expect(isDegradingTransition('healthy', 'down')).toBe(true);
+      expect(isDegradingTransition('degraded', 'down')).toBe(true);
+      expect(isDegradingTransition('degraded', 'degraded')).toBe(false);
+      expect(isDegradingTransition('down', 'degraded')).toBe(false);
+      expect(isDegradingTransition('degraded', 'healthy')).toBe(false);
+    });
+  });
+
+  describe('failingDimensions', () => {
+    it('reports no failures for an all-clear cycle', () => {
+      expect(
+        failingDimensions(
+          { uptime: upSample(), latency: [upSample()], drift: driftSample(false) },
+          5000
+        )
+      ).toEqual([]);
+    });
+
+    it('flags uptime when the toml probe was unreachable', () => {
+      expect(failingDimensions({ uptime: downSample() }, 5000)).toEqual(['uptime']);
+    });
+
+    it('flags latency for a reachable but over-budget quote', () => {
+      expect(failingDimensions({ latency: [upSample(9000)] }, 5000)).toEqual(['latency']);
+      expect(failingDimensions({ latency: [upSample(4999)] }, 5000)).toEqual([]);
+    });
+
+    it('flags drift only when the quote was flagged off-median', () => {
+      expect(failingDimensions({ drift: driftSample(true) }, 5000)).toEqual(['drift']);
+      expect(failingDimensions({ drift: driftSample(false) }, 5000)).toEqual([]);
+    });
+
+    it('returns every failing dimension in a stable order', () => {
+      expect(
+        failingDimensions(
+          { drift: driftSample(true), latency: [upSample(9000)], uptime: downSample() },
+          5000
+        )
+      ).toEqual(['uptime', 'latency', 'drift']);
+    });
+
+    it('ignores dimensions the cycle never probed', () => {
+      expect(failingDimensions({}, 5000)).toEqual([]);
+    });
+  });
+
+  describe('AnchorHealthTracker', () => {
+    // Acceptance criteria (#D016): a simulated run of consecutive failures
+    // crosses the debounce threshold and triggers exactly one alert naming the
+    // failing dimension.
+    it('alerts exactly once, on the cycle that crosses the debounce threshold', async () => {
+      const onAlert = vi.fn();
+      const tracker = new AnchorHealthTracker({
+        degradeAfter: 3,
+        downAfter: 99,
+        onAlert,
+        now: () => 5000,
+      });
+
+      const alerts: (HealthAlert | null)[] = [];
+      for (let i = 0; i < 5; i++) {
+        alerts.push(await tracker.observe('anchor-1', { uptime: downSample() }));
+      }
+
+      // First two failures are debounced; the third crosses the threshold.
+      expect(alerts[0]).toBeNull();
+      expect(alerts[1]).toBeNull();
+      expect(alerts[2]).not.toBeNull();
+      // Further failures at the same status stay silent.
+      expect(alerts[3]).toBeNull();
+      expect(alerts[4]).toBeNull();
+
+      expect(onAlert).toHaveBeenCalledTimes(1);
+      expect(onAlert).toHaveBeenCalledWith({
+        anchorId: 'anchor-1',
+        from: 'healthy',
+        to: 'degraded',
+        dimensions: ['uptime'],
+        consecutiveFailures: 3,
+        at: 5000,
+      });
+    });
+
+    it('does not alert on a single flaky cycle surrounded by healthy ones', async () => {
+      const onAlert = vi.fn();
+      const tracker = new AnchorHealthTracker({ degradeAfter: 3, onAlert });
+
+      for (const failing of [false, true, false, true, false, true, false]) {
+        await tracker.observe('anchor-1', { uptime: failing ? downSample() : upSample() });
+      }
+
+      expect(onAlert).not.toHaveBeenCalled();
+      expect(tracker.statusOf('anchor-1')).toEqual({
+        status: 'healthy',
+        consecutiveFailures: 0,
+        dimensions: [],
+      });
+    });
+
+    it('names every dimension that failed during the streak', async () => {
+      const onAlert = vi.fn();
+      const tracker = new AnchorHealthTracker({
+        degradeAfter: 3,
+        latencyBudgetMs: 5000,
+        onAlert,
+      });
+
+      await tracker.observe('anchor-1', { uptime: downSample() });
+      await tracker.observe('anchor-1', { latency: [upSample(9000)] });
+      const alert = await tracker.observe('anchor-1', { drift: driftSample(true) });
+
+      expect(alert?.dimensions).toEqual(['uptime', 'latency', 'drift']);
+      expect(onAlert).toHaveBeenCalledTimes(1);
+    });
+
+    it('escalates degraded to down with a second alert', async () => {
+      const onAlert = vi.fn();
+      const tracker = new AnchorHealthTracker({ degradeAfter: 2, downAfter: 4, onAlert });
+
+      const results: (HealthAlert | null)[] = [];
+      for (let i = 0; i < 5; i++) {
+        results.push(await tracker.observe('anchor-1', { uptime: downSample() }));
+      }
+
+      expect(results.map((r) => r?.to ?? null)).toEqual([null, 'degraded', null, 'down', null]);
+      expect(onAlert).toHaveBeenCalledTimes(2);
+      expect(onAlert).toHaveBeenLastCalledWith(
+        expect.objectContaining({ from: 'degraded', to: 'down', consecutiveFailures: 4 })
+      );
+    });
+
+    it('resets the streak and dimensions on recovery, without alerting', async () => {
+      const onAlert = vi.fn();
+      const tracker = new AnchorHealthTracker({ degradeAfter: 2, onAlert });
+
+      await tracker.observe('anchor-1', { uptime: downSample() });
+      await tracker.observe('anchor-1', { uptime: downSample() });
+      expect(tracker.statusOf('anchor-1').status).toBe('degraded');
+
+      await tracker.observe('anchor-1', { uptime: upSample() });
+      expect(tracker.statusOf('anchor-1')).toEqual({
+        status: 'healthy',
+        consecutiveFailures: 0,
+        dimensions: [],
+      });
+      // Only the degradation alerted; recovery did not.
+      expect(onAlert).toHaveBeenCalledTimes(1);
+
+      // A fresh streak alerts again once it re-crosses the threshold.
+      await tracker.observe('anchor-1', { drift: driftSample(true) });
+      const realert = await tracker.observe('anchor-1', { drift: driftSample(true) });
+      expect(realert?.dimensions).toEqual(['drift']);
+      expect(onAlert).toHaveBeenCalledTimes(2);
+    });
+
+    it('tracks each anchor independently', async () => {
+      const onAlert = vi.fn();
+      const tracker = new AnchorHealthTracker({ degradeAfter: 2, onAlert });
+
+      await tracker.observe('anchor-1', { uptime: downSample() });
+      await tracker.observe('anchor-2', { uptime: upSample() });
+      await tracker.observe('anchor-1', { uptime: downSample() });
+      await tracker.observe('anchor-2', { uptime: upSample() });
+
+      expect(onAlert).toHaveBeenCalledTimes(1);
+      expect(onAlert).toHaveBeenCalledWith(expect.objectContaining({ anchorId: 'anchor-1' }));
+      expect(tracker.snapshot()).toEqual({
+        'anchor-1': { status: 'degraded', consecutiveFailures: 2, dimensions: ['uptime'] },
+        'anchor-2': { status: 'healthy', consecutiveFailures: 0, dimensions: [] },
+      });
+    });
+
+    it('reports an untracked anchor as healthy', () => {
+      const tracker = new AnchorHealthTracker();
+      expect(tracker.statusOf('never-probed')).toEqual({
+        status: 'healthy',
+        consecutiveFailures: 0,
+        dimensions: [],
+      });
+      expect(tracker.snapshot()).toEqual({});
+    });
+
+    it('awaits an async alert hook before returning', async () => {
+      const seen: string[] = [];
+      const tracker = new AnchorHealthTracker({
+        degradeAfter: 1,
+        onAlert: async () => {
+          await Promise.resolve();
+          seen.push('hook');
+        },
+      });
+
+      await tracker.observe('anchor-1', { uptime: downSample() });
+      seen.push('after');
+
+      expect(seen).toEqual(['hook', 'after']);
+    });
+
+    it('accepts pre-computed failing dimensions', async () => {
+      const onAlert = vi.fn();
+      const tracker = new AnchorHealthTracker({ degradeAfter: 1, onAlert });
+
+      const alert = await tracker.observeFailures('anchor-1', ['drift']);
+
+      expect(alert).toMatchObject({ to: 'degraded', dimensions: ['drift'] });
+      expect(onAlert).toHaveBeenCalledTimes(1);
+    });
   });
 });
