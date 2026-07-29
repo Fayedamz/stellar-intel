@@ -393,8 +393,8 @@ compounds.
 - [ ] `#231` `GET /v1/public/scores` (anchor, corridor) → score
 - [ ] `#232` `GET /v1/public/outcomes` paginated feed
 - [ ] `#233` Rate limits + API-key tier (free / paid)
-- [ ] `#234` OpenAPI spec checked into `docs/openapi.yaml`
-- [ ] `#235` `api-docs` page at `/docs/api` (Redoc / Scalar)
+- [x] `#234` OpenAPI spec generated to `public/openapi.json` (15 endpoints, 15 schemas)
+- [x] `#235` `api-docs` page at `/docs/api` (interactive playground with live try-it panels)
 - [ ] `#239` **Probe service** (independent track) — nightly $1 synthetic
       off-ramps to seed corridor coverage
 - [ ] `#240` Probe-signal reputation weighting (lower weight than organic)

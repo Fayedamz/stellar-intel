@@ -141,6 +141,12 @@ NEXT_PUBLIC_HORIZON_URL=https://horizon-testnet.stellar.org
 
 ---
 
+## Developer Portal
+
+The interactive developer portal — with API reference, quickstart guides,
+authentication docs, SDK documentation, and a live API playground — is at
+[**stellar-intel.vercel.app/docs**](https://stellar-intel.vercel.app/docs).
+
 ## Documentation
 
 The full doc surface lives under [`docs/`](docs/). Start with:

@@ -79,6 +79,11 @@ a real outcome through Postgres → publisher → testnet chain state — it
 self-skips unless a full testnet environment is provided (see the file header
 for the required env vars).
 
+## Documentation
+
+Full API reference, quickstart guides, and integration docs are available in the
+[Stellar Intel Developer Portal](https://stellar-intel.vercel.app/docs).
+
 ## Related
 
 - [`docs/ORACLE_SPEC.md`](https://github.com/ezedike-evan/stellar-intel/blob/main/docs/ORACLE_SPEC.md) — contract interface and consumer notes.
