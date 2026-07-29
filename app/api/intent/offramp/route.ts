@@ -11,6 +11,14 @@ import {
 } from '@stellar/stellar-sdk';
 import { hashIntent } from '@/lib/intent/hash';
 import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit';
+import { getIdempotentResponse, storeIdempotentResponse } from '@/lib/api/idempotency';
+import {
+  API_VERSION,
+  apiErrorResponse,
+  apiSuccessResponse,
+  rateLimitedResponse,
+  withRateLimitHeaders,
+} from '@/lib/api/response';
 import { USDC_ISSUER } from '@/lib/config';
 import { withRequestLogger } from '@/lib/logger';
 import { recordIntentError, recordIntentSuccess } from '@/lib/metrics';
@@ -109,23 +117,52 @@ function buildUnsignedOfframpTx(
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
+/**
+ * Responses that are safe to replay verbatim for a repeated Idempotency-Key:
+ * deterministic outcomes given the same input (success, or a validation/
+ * routing error that will not change on retry). 500s are deliberately never
+ * cached -- a transient failure should not be pinned to a key, since a
+ * retry might succeed once the underlying issue clears.
+ */
+function isIdempotentCacheable(status: number): boolean {
+  return status === 200 || status === 400;
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   return withRequestLogger(request, 'api.intent.offramp', async (logger) => {
+    const idempotencyKey = request.headers.get('idempotency-key');
+
+    if (idempotencyKey) {
+      const cached = getIdempotentResponse(idempotencyKey);
+      if (cached) {
+        logger.info({ event: 'idempotent_replay', idempotencyKey });
+        const response = NextResponse.json(cached.body, {
+          status: cached.status,
+          headers: { ...cached.headers, 'Idempotency-Replayed': 'true' },
+        });
+        response.headers.set('API-Version', API_VERSION);
+        return response;
+      }
+    }
+
     const ip = getClientIp(request.headers);
     const rl = checkRateLimit(ip, { bucket: 'api.intent.offramp', maxRequests: 20 });
     if (!rl.allowed) {
       logger.warn({ event: 'rate_limit_exceeded', ip, retryAfter: rl.retryAfter });
-      return NextResponse.json(
-        { error: 'Too many requests', retryAfter: rl.retryAfter },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': String(rl.retryAfter),
-            'X-RateLimit-Remaining': '0',
-          },
-        }
-      );
+      return rateLimitedResponse(rl);
     }
+
+    const respond = <T>(payload: T, status: number): NextResponse => {
+      const response =
+        status >= 400
+          ? apiErrorResponse(payload as ApiError, status)
+          : apiSuccessResponse(payload, { status });
+      withRateLimitHeaders(response, rl);
+      if (idempotencyKey && isIdempotentCacheable(status)) {
+        storeIdempotentResponse(idempotencyKey, status, payload);
+      }
+      return response;
+    };
 
     let body: unknown;
     try {
@@ -133,9 +170,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     } catch {
       logger.warn({ event: 'invalid_json', message: 'Request body must be valid JSON' });
       recordIntentError('INVALID_JSON');
-      return NextResponse.json<ApiError>(
+      return respond<ApiError>(
         { code: 'INVALID_JSON', message: 'Request body must be valid JSON' },
-        { status: 400 }
+        400
       );
     }
 
@@ -144,12 +181,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const first = parsed.error.issues[0];
       logger.warn({ event: 'validation_failed', issues: parsed.error.issues });
       recordIntentError('VALIDATION_ERROR');
-      return NextResponse.json<ApiError>(
-        {
-          code: 'VALIDATION_ERROR',
-          message: first?.message ?? 'Invalid intent payload',
-        },
-        { status: 400 }
+      return respond<ApiError>(
+        { code: 'VALIDATION_ERROR', message: first?.message ?? 'Invalid intent payload' },
+        400
       );
     }
 
@@ -169,12 +203,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         destinationAsset: intent.destinationAsset,
       });
       recordIntentError('NO_ROUTE');
-      return NextResponse.json<ApiError>(
+      return respond<ApiError>(
         {
           code: 'NO_ROUTE',
           message: `No route found for ${intent.sourceAsset} → ${intent.destinationAsset}`,
         },
-        { status: 400 }
+        400
       );
     }
 
@@ -184,10 +218,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!anchorEntry) {
       logger.error({ event: 'anchor_config_missing', corridorId: route.corridorId });
       recordIntentError('NO_ROUTE');
-      return NextResponse.json<ApiError>(
-        { code: 'NO_ROUTE', message: 'Anchor configuration missing' },
-        { status: 400 }
-      );
+      return respond<ApiError>({ code: 'NO_ROUTE', message: 'Anchor configuration missing' }, 400);
     }
 
     let unsignedTx: string;
@@ -206,17 +237,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         error: err instanceof Error ? err.message : 'Unknown error',
       });
       recordIntentError('TX_BUILD_FAILED');
-      return NextResponse.json<ApiError>(
+      // Not cached under the idempotency key (isIdempotentCacheable excludes
+      // 500s) -- a retry with the same key should try building again.
+      return respond<ApiError>(
         {
           code: 'TX_BUILD_FAILED',
           message: err instanceof Error ? err.message : 'Failed to build transaction',
         },
-        { status: 500 }
+        500
       );
     }
 
     logger.info({ event: 'intent_response', corridorId: route.corridorId, quoteId });
     recordIntentSuccess();
-    return NextResponse.json<OfframpIntentResponse>({ route, unsignedTx, quoteId });
+    return respond<OfframpIntentResponse>({ route, unsignedTx, quoteId }, 200);
   });
 }

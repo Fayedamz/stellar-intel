@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Hardened `POST /api/intent/offramp` (#805): `Idempotency-Key` header support (24h replay window, only for deterministic 200/400 outcomes), `X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` headers on every response, an `API-Version` header, and a unified `ApiError` envelope for the previously ad hoc 429 body. New `lib/api/idempotency.ts` and `lib/api/response.ts`.
 - `StatusTracker`: when `stellar_transaction_id` is a valid 64-char hex, render a link to `{STELLAR_EXPERT_URL}/tx/{id}` opening in a new tab (`target="_blank" rel="noopener noreferrer"`) ([#47](https://github.com/Ezedike-Evan/stellar-intel/issues/47))
 - `lib/reporter`: pluggable error reporter with noop default; wire via `configureReporter()` at app startup (#184)
 
