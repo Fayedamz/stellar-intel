@@ -14,8 +14,12 @@ export default function SdksPage() {
       <section className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-900/30">
-            <svg className="h-6 w-6 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M0 12v6.5l12 5.5 12-5.5V12l-12 5.5L0 12zm0-6.5L12 11 24 5.5 12 0 0 5.5z"/>
+            <svg
+              className="h-6 w-6 text-blue-600 dark:text-blue-400"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M0 12v6.5l12 5.5 12-5.5V12l-12 5.5L0 12zm0-6.5L12 11 24 5.5 12 0 0 5.5z" />
             </svg>
           </div>
           <div>
@@ -28,7 +32,7 @@ export default function SdksPage() {
 
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-900/50 dark:bg-blue-900/20">
           <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-            Status: Planned — The typed SDK is a v4 deliverable. 
+            Status: Planned — The typed SDK is a v4 deliverable.
           </p>
           <p className="mt-1 text-sm text-blue-700 dark:text-blue-400">
             Until it ships, use the HTTP API directly (examples below).
@@ -66,8 +70,8 @@ export async function submitOfframpIntent(body: unknown) {
 }`}
         />
         <p className="text-sm text-secondary-text">
-          Types can be imported from the repo: <code>OfframpIntent</code>, <code>SignedIntentEnvelope</code>,
-          <code>IntentV1</code> in <code>types/intent.ts</code>.
+          Types can be imported from the repo: <code>OfframpIntent</code>,{' '}
+          <code>SignedIntentEnvelope</code>,<code>IntentV1</code> in <code>types/intent.ts</code>.
         </p>
       </section>
 
@@ -75,8 +79,12 @@ export async function submitOfframpIntent(body: unknown) {
       <section className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-green-50 p-2 dark:bg-green-900/30">
-            <svg className="h-6 w-6 text-green-600 dark:text-green-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.9 0C10.07 0 8.54.37 7.5 1.12c-1.04.75-1.56 1.78-1.56 3v2.25c0 .87.26 1.48.78 1.86.52.37 1.2.56 2.03.56h3.9c.84 0 1.54.26 2.1.78.56.52.83 1.22.83 2.1v1.5H9.22c-.87 0-1.66.28-2.35.84-.67.56-1.01 1.3-1.01 2.22v4.22c0 .85.33 1.6 1 2.25.67.66 1.47 1.08 2.4 1.28.94.2 1.86.3 2.78.3 1.86 0 3.36-.42 4.52-1.28 1.16-.85 1.74-2 1.74-3.45v-2.06c0-.87-.27-1.56-.8-2.06-.54-.5-1.23-.75-2.08-.75h-4.1c-.86 0-1.57-.28-2.12-.84-.56-.56-.84-1.27-.84-2.1v-1.5h6.75c.87 0 1.6-.24 2.2-.72.6-.48.9-1.2.9-2.16v-4.5c0-.93-.34-1.7-1.03-2.3C15.6.32 14.4 0 12.65 0H11.9zm-.5 2.25c.4 0 .74.14 1.02.42.28.28.42.62.42 1.02 0 .4-.14.74-.42 1.02-.28.28-.64.42-1.04.42-.4 0-.74-.14-1.02-.42a1.38 1.38 0 01-.4-1.02c0-.4.14-.74.42-1.02.28-.28.63-.42 1.03-.42z"/>
+            <svg
+              className="h-6 w-6 text-green-600 dark:text-green-400"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M11.9 0C10.07 0 8.54.37 7.5 1.12c-1.04.75-1.56 1.78-1.56 3v2.25c0 .87.26 1.48.78 1.86.52.37 1.2.56 2.03.56h3.9c.84 0 1.54.26 2.1.78.56.52.83 1.22.83 2.1v1.5H9.22c-.87 0-1.66.28-2.35.84-.67.56-1.01 1.3-1.01 2.22v4.22c0 .85.33 1.6 1 2.25.67.66 1.47 1.08 2.4 1.28.94.2 1.86.3 2.78.3 1.86 0 3.36-.42 4.52-1.28 1.16-.85 1.74-2 1.74-3.45v-2.06c0-.87-.27-1.56-.8-2.06-.54-.5-1.23-.75-2.08-.75h-4.1c-.86 0-1.57-.28-2.12-.84-.56-.56-.84-1.27-.84-2.1v-1.5h6.75c.87 0 1.6-.24 2.2-.72.6-.48.9-1.2.9-2.16v-4.5c0-.93-.34-1.7-1.03-2.3C15.6.32 14.4 0 12.65 0H11.9zm-.5 2.25c.4 0 .74.14 1.02.42.28.28.42.62.42 1.02 0 .4-.14.74-.42 1.02-.28.28-.64.42-1.04.42-.4 0-.74-.14-1.02-.42a1.38 1.38 0 01-.4-1.02c0-.4.14-.74.42-1.02.28-.28.63-.42 1.03-.42z" />
             </svg>
           </div>
           <div>
@@ -126,8 +134,12 @@ def get_leaderboard(corridor: str | None = None) -> dict:
       <section className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-orange-50 p-2 dark:bg-orange-900/30">
-            <svg className="h-6 w-6 text-orange-600 dark:text-orange-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.7 12.1c0 .4-.1.7-.1 1.1.1.4.2.8.4 1.1l.4.8c.2.4.4.8.5 1.2.2.4.3.8.3 1.2 0 .5-.2.9-.5 1.3-.3.4-.7.6-1.1.7-.4.1-.8.1-1.2 0h-.1c-.4 0-.8-.1-1.1-.2-.4-.1-.7-.3-1.1-.5l-.8-.4c-.8-.4-1.5-.7-2.4-.9-.8-.2-1.7-.3-2.6-.3-.9 0-2.1.1-2.9.3-.8.2-1.5.5-2.2.9l-.8.4c-.4.2-.7.3-1.1.5-.4.1-.7.2-1.1.2h-.1c-.4 0-.8 0-1.2-.1-.4-.1-.8-.3-1.1-.7-.3-.3-.4-.7-.4-1.1 0-.4.1-.8.2-1.2.1-.4.3-.8.5-1.2l.4-.8c.2-.4.4-.7.5-1.1.1-.4.2-.8.3-1.2V12c0-.8 0-1.5-.1-2.2 0-.7-.1-1.3-.2-2-.1-.7-.2-1.3-.4-1.9L3.5 5c-.2-.5-.4-.9-.5-1.3C2.9 3.3 2.9 3 3 2.7c.1-.3.3-.5.5-.7.2-.2.5-.3.8-.4.3-.1.6-.1.9 0 .3 0 .6.1.9.3l.6.3c.5.3 1 .5 1.5.7.5.2 1 .3 1.6.4.6.1 1.2.1 1.8.1h1.4c.6 0 1.2 0 1.8-.1.6-.1 1.1-.2 1.6-.4.5-.2 1-.4 1.5-.7l.6-.3c.3-.2.6-.3.9-.3.3 0 .6 0 .9.1.3.1.5.2.7.4.2.2.3.4.4.7.1.3 0 .6-.1.9-.2.4-.3.8-.5 1.3l-.3.7c-.2.6-.3 1.2-.4 1.9-.1.7-.2 1.3-.2 2-.1.7-.1 1.4-.1 2.2V12z"/>
+            <svg
+              className="h-6 w-6 text-orange-600 dark:text-orange-400"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M19.7 12.1c0 .4-.1.7-.1 1.1.1.4.2.8.4 1.1l.4.8c.2.4.4.8.5 1.2.2.4.3.8.3 1.2 0 .5-.2.9-.5 1.3-.3.4-.7.6-1.1.7-.4.1-.8.1-1.2 0h-.1c-.4 0-.8-.1-1.1-.2-.4-.1-.7-.3-1.1-.5l-.8-.4c-.8-.4-1.5-.7-2.4-.9-.8-.2-1.7-.3-2.6-.3-.9 0-2.1.1-2.9.3-.8.2-1.5.5-2.2.9l-.8.4c-.4.2-.7.3-1.1.5-.4.1-.7.2-1.1.2h-.1c-.4 0-.8 0-1.2-.1-.4-.1-.8-.3-1.1-.7-.3-.3-.4-.7-.4-1.1 0-.4.1-.8.2-1.2.1-.4.3-.8.5-1.2l.4-.8c.2-.4.4-.7.5-1.1.1-.4.2-.8.3-1.2V12c0-.8 0-1.5-.1-2.2 0-.7-.1-1.3-.2-2-.1-.7-.2-1.3-.4-1.9L3.5 5c-.2-.5-.4-.9-.5-1.3C2.9 3.3 2.9 3 3 2.7c.1-.3.3-.5.5-.7.2-.2.5-.3.8-.4.3-.1.6-.1.9 0 .3 0 .6.1.9.3l.6.3c.5.3 1 .5 1.5.7.5.2 1 .3 1.6.4.6.1 1.2.1 1.8.1h1.4c.6 0 1.2 0 1.8-.1.6-.1 1.1-.2 1.6-.4.5-.2 1-.4 1.5-.7l.6-.3c.3-.2.6-.3.9-.3.3 0 .6 0 .9.1.3.1.5.2.7.4.2.2.3.4.4.7.1.3 0 .6-.1.9-.2.4-.3.8-.5 1.3l-.3.7c-.2.6-.3 1.2-.4 1.9-.1.7-.2 1.3-.2 2-.1.7-.1 1.4-.1 2.2V12z" />
             </svg>
           </div>
           <div>
@@ -139,8 +151,8 @@ def get_leaderboard(corridor: str | None = None) -> dict:
         </div>
 
         <p className="text-secondary-text">
-          The <code>stellar-intel-reputation</code> crate provides a typed client for reading reputation data
-          from the Soroban oracle contract on-chain.
+          The <code>stellar-intel-reputation</code> crate provides a typed client for reading
+          reputation data from the Soroban oracle contract on-chain.
         </p>
         <CodeBlock
           language="toml"
@@ -186,8 +198,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       <section className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-purple-50 p-2 dark:bg-purple-900/30">
-            <svg className="h-6 w-6 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            <svg
+              className="h-6 w-6 text-purple-600 dark:text-purple-400"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
           </div>
           <div>
@@ -201,12 +217,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         <p className="text-secondary-text">
           The MCP package exposes Stellar Intel&apos;s off-ramp routing to MCP-capable AI agents.
         </p>
-        <CodeBlock
-          language="bash"
-          code={`npm install @stellarintel/mcp`}
-        />
+        <CodeBlock language="bash" code={`npm install @stellarintel/mcp`} />
         <p className="text-sm text-secondary-text">
-          See the <a href="/docs/mcp" className="text-accent hover:underline">MCP tool docs</a> for full usage.
+          See the{' '}
+          <a href="/docs/mcp" className="text-accent hover:underline">
+            MCP tool docs
+          </a>{' '}
+          for full usage.
         </p>
       </section>
 
@@ -227,7 +244,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 <td className="px-3 py-2 font-mono text-xs text-accent">@stellarintel/sdk</td>
                 <td className="px-3 py-2 text-secondary-text">TypeScript</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Planned</span>
+                  <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                    Planned
+                  </span>
                 </td>
                 <td className="px-3 py-2 text-secondary-text">npm (v4)</td>
               </tr>
@@ -235,37 +254,68 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 <td className="px-3 py-2 font-mono text-xs text-accent">@stellarintel/mcp</td>
                 <td className="px-3 py-2 text-secondary-text">TypeScript</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">Published</span>
+                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                    Published
+                  </span>
                 </td>
                 <td className="px-3 py-2">
-                  <a href="https://www.npmjs.com/package/@stellarintel/mcp" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">npm</a>
+                  <a
+                    href="https://www.npmjs.com/package/@stellarintel/mcp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    npm
+                  </a>
                 </td>
               </tr>
               <tr>
                 <td className="px-3 py-2 font-mono text-xs text-accent">@stellarintel/publisher</td>
                 <td className="px-3 py-2 text-secondary-text">TypeScript</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">Published</span>
+                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                    Published
+                  </span>
                 </td>
                 <td className="px-3 py-2">
-                  <a href="https://www.npmjs.com/package/@stellarintel/publisher" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">npm</a>
+                  <a
+                    href="https://www.npmjs.com/package/@stellarintel/publisher"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    npm
+                  </a>
                 </td>
               </tr>
               <tr>
-                <td className="px-3 py-2 font-mono text-xs text-accent">stellar-intel-reputation</td>
+                <td className="px-3 py-2 font-mono text-xs text-accent">
+                  stellar-intel-reputation
+                </td>
                 <td className="px-3 py-2 text-secondary-text">Rust</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">Published</span>
+                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                    Published
+                  </span>
                 </td>
                 <td className="px-3 py-2">
-                  <a href="https://crates.io/crates/stellar-intel-reputation" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">crates.io</a>
+                  <a
+                    href="https://crates.io/crates/stellar-intel-reputation"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    crates.io
+                  </a>
                 </td>
               </tr>
               <tr>
                 <td className="px-3 py-2 font-mono text-xs text-accent">stellar-intel (Python)</td>
                 <td className="px-3 py-2 text-secondary-text">Python</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Planned</span>
+                  <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                    Planned
+                  </span>
                 </td>
                 <td className="px-3 py-2 text-secondary-text">PyPI (v4)</td>
               </tr>

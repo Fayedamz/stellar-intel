@@ -13,7 +13,8 @@ export default function QuickstartPage() {
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-primary-text">1. Compare rates for a corridor</h2>
         <p className="text-secondary-text">
-          Fetch live quotes for <strong>USDC to NGN</strong> (Nigeria Naira) across every integrated anchor.
+          Fetch live quotes for <strong>USDC to NGN</strong> (Nigeria Naira) across every integrated
+          anchor.
         </p>
         <CodeBlock
           language="bash"
@@ -26,7 +27,9 @@ export default function QuickstartPage() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-primary-text">2. Check an anchor&apos;s reputation</h2>
+        <h2 className="text-xl font-semibold text-primary-text">
+          2. Check an anchor&apos;s reputation
+        </h2>
         <p className="text-secondary-text">
           Get the composite reputation score for a specific anchor.
         </p>
@@ -89,11 +92,36 @@ curl -sX POST https://stellar-intel.vercel.app/api/intent/offramp \\
       <section className="rounded-xl border border-border bg-bg-subtle p-6">
         <h2 className="text-lg font-semibold text-primary-text">Next steps</h2>
         <ul className="mt-3 space-y-2 text-sm text-secondary-text">
-          <li>• Read about <a href="/docs/auth" className="text-accent hover:underline">authentication and rate limits</a></li>
-          <li>• Explore the <a href="/docs/api" className="text-accent hover:underline">interactive API reference</a></li>
-          <li>• Set up <a href="/docs/webhooks" className="text-accent hover:underline">webhook notifications</a></li>
-          <li>• Browse the <a href="/docs/sdks" className="text-accent hover:underline">SDK documentation</a></li>
-          <li>• Integrate with AI agents via <a href="/docs/mcp" className="text-accent hover:underline">MCP</a></li>
+          <li>
+            • Read about{' '}
+            <a href="/docs/auth" className="text-accent hover:underline">
+              authentication and rate limits
+            </a>
+          </li>
+          <li>
+            • Explore the{' '}
+            <a href="/docs/api" className="text-accent hover:underline">
+              interactive API reference
+            </a>
+          </li>
+          <li>
+            • Set up{' '}
+            <a href="/docs/webhooks" className="text-accent hover:underline">
+              webhook notifications
+            </a>
+          </li>
+          <li>
+            • Browse the{' '}
+            <a href="/docs/sdks" className="text-accent hover:underline">
+              SDK documentation
+            </a>
+          </li>
+          <li>
+            • Integrate with AI agents via{' '}
+            <a href="/docs/mcp" className="text-accent hover:underline">
+              MCP
+            </a>
+          </li>
         </ul>
       </section>
     </div>

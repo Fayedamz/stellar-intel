@@ -22,9 +22,9 @@ export default function WebhooksPage() {
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-primary-text">Overview</h2>
         <p className="text-secondary-text">
-          Webhooks allow your application to receive real-time notifications when events happen on the
-          Stellar Intel platform — such as intent settlements, dispute updates, or reputation score
-          changes — without polling.
+          Webhooks allow your application to receive real-time notifications when events happen on
+          the Stellar Intel platform — such as intent settlements, dispute updates, or reputation
+          score changes — without polling.
         </p>
       </section>
 
@@ -41,27 +41,39 @@ export default function WebhooksPage() {
             <tbody className="divide-y divide-border">
               <tr>
                 <td className="px-4 py-3 font-mono text-xs text-accent">intent.settled</td>
-                <td className="px-4 py-3 text-secondary-text">An off-ramp intent was successfully settled</td>
+                <td className="px-4 py-3 text-secondary-text">
+                  An off-ramp intent was successfully settled
+                </td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-mono text-xs text-accent">intent.failed</td>
-                <td className="px-4 py-3 text-secondary-text">An off-ramp intent failed to settle</td>
+                <td className="px-4 py-3 text-secondary-text">
+                  An off-ramp intent failed to settle
+                </td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-mono text-xs text-accent">dispute.created</td>
-                <td className="px-4 py-3 text-secondary-text">A new dispute was filed against an outcome</td>
+                <td className="px-4 py-3 text-secondary-text">
+                  A new dispute was filed against an outcome
+                </td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-mono text-xs text-accent">dispute.resolved</td>
-                <td className="px-4 py-3 text-secondary-text">A dispute was accepted or rejected by an admin</td>
+                <td className="px-4 py-3 text-secondary-text">
+                  A dispute was accepted or rejected by an admin
+                </td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-mono text-xs text-accent">anchor.onboarded</td>
-                <td className="px-4 py-3 text-secondary-text">A new anchor was registered in the fleet</td>
+                <td className="px-4 py-3 text-secondary-text">
+                  A new anchor was registered in the fleet
+                </td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-mono text-xs text-accent">publisher.tick</td>
-                <td className="px-4 py-3 text-secondary-text">Publisher completed a batch submission to the oracle</td>
+                <td className="px-4 py-3 text-secondary-text">
+                  Publisher completed a batch submission to the oracle
+                </td>
               </tr>
             </tbody>
           </table>
@@ -71,7 +83,8 @@ export default function WebhooksPage() {
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-primary-text">Payload Format</h2>
         <p className="text-secondary-text">
-          Webhooks are delivered via HTTP POST to your registered endpoint with the following payload structure:
+          Webhooks are delivered via HTTP POST to your registered endpoint with the following
+          payload structure:
         </p>
         <CodeBlock
           language="json"
@@ -143,11 +156,21 @@ function verifyWebhookSignature(
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-primary-text">Best Practices</h2>
         <ul className="space-y-2 text-sm text-secondary-text">
-          <li>• Respond with <code>200 OK</code> within 5 seconds to acknowledge receipt</li>
-          <li>• Return a <code>4xx</code> status to signal a permanent failure (we will disable the webhook)</li>
-          <li>• Return a <code>5xx</code> or timeout for automatic retry (up to 3 times with exponential backoff)</li>
+          <li>
+            • Respond with <code>200 OK</code> within 5 seconds to acknowledge receipt
+          </li>
+          <li>
+            • Return a <code>4xx</code> status to signal a permanent failure (we will disable the
+            webhook)
+          </li>
+          <li>
+            • Return a <code>5xx</code> or timeout for automatic retry (up to 3 times with
+            exponential backoff)
+          </li>
           <li>• Store the raw payload and verify the signature before processing</li>
-          <li>• Idempotency: process by <code>event.id</code> to handle duplicate deliveries</li>
+          <li>
+            • Idempotency: process by <code>event.id</code> to handle duplicate deliveries
+          </li>
         </ul>
       </section>
     </div>

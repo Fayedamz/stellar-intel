@@ -13,8 +13,8 @@ export default function McpPage() {
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-primary-text">Overview</h2>
         <p className="text-secondary-text">
-          The MCP server exposes Stellar Intel&apos;s off-ramp routing to MCP-capable agents over stdio.
-          It reuses the same routing and canonical-hashing logic as the web app.
+          The MCP server exposes Stellar Intel&apos;s off-ramp routing to MCP-capable agents over
+          stdio. It reuses the same routing and canonical-hashing logic as the web app.
         </p>
         <p className="text-secondary-text">
           The server is published on npm as <code className="text-accent">@stellarintel/mcp</code>.
@@ -38,7 +38,8 @@ npm start       # node dist/index.js, stdio transport
 npx tsx scripts/mcp/server.ts`}
         />
         <p className="text-sm text-secondary-text">
-          Point any MCP-capable client (Claude Desktop, an agent framework, etc.) at the built entry point as a stdio command.
+          Point any MCP-capable client (Claude Desktop, an agent framework, etc.) at the built entry
+          point as a stdio command.
         </p>
       </section>
 
@@ -53,9 +54,10 @@ npx tsx scripts/mcp/server.ts`}
             intel.offramp.quote
           </h3>
           <p className="mt-2 text-sm text-secondary-text">
-            Returns the best net-received quote for a corridor + amount. The rate is sourced from the
-            routed anchor&apos;s current price (SEP-38 firm quote, falling back to SEP-24/SEP-6 fee-adjusted
-            live FX) — it can return <code>RATE_UNAVAILABLE</code> if the anchor cannot currently be quoted.
+            Returns the best net-received quote for a corridor + amount. The rate is sourced from
+            the routed anchor&apos;s current price (SEP-38 firm quote, falling back to SEP-24/SEP-6
+            fee-adjusted live FX) — it can return <code>RATE_UNAVAILABLE</code> if the anchor cannot
+            currently be quoted.
           </p>
 
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -93,8 +95,9 @@ npx tsx scripts/mcp/server.ts`}
             intel.offramp.prepare
           </h3>
           <p className="mt-2 text-sm text-secondary-text">
-            Returns an <strong>unsigned</strong> intent envelope plus an unsigned Stellar transaction for
-            an agent to sign. The <code>intentHash</code> is the canonical SHA-256 hash the agent signs.
+            Returns an <strong>unsigned</strong> intent envelope plus an unsigned Stellar
+            transaction for an agent to sign. The <code>intentHash</code> is the canonical SHA-256
+            hash the agent signs.
           </p>
 
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -136,19 +139,17 @@ npx tsx scripts/mcp/server.ts`}
         <h2 className="text-xl font-semibold text-primary-text">Security Model</h2>
         <div className="rounded-xl border border-border bg-bg-subtle p-5">
           <p className="text-sm text-secondary-text">
-            <strong>Non-custodial by design.</strong> The MCP server can only <em>prepare</em> intents
-            and unsigned transactions — it never holds signing keys. An AI agent can price and compare
-            routes autonomously, but the user must sign the final transaction in their wallet (Freighter)
-            before execution. The agent cannot spend without a user signature.
+            <strong>Non-custodial by design.</strong> The MCP server can only <em>prepare</em>{' '}
+            intents and unsigned transactions — it never holds signing keys. An AI agent can price
+            and compare routes autonomously, but the user must sign the final transaction in their
+            wallet (Freighter) before execution. The agent cannot spend without a user signature.
           </p>
         </div>
       </section>
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-primary-text">Testing</h2>
-        <p className="text-secondary-text">
-          Tests are located in the main app repository:
-        </p>
+        <p className="text-secondary-text">Tests are located in the main app repository:</p>
         <CodeBlock
           language="bash"
           code={`# Unit tests
@@ -183,10 +184,7 @@ npm run test -- tests/mcp-e2e.spec.ts`}
             </a>
           </li>
           <li>
-            <a
-              href="/docs/quickstart"
-              className="text-accent hover:underline"
-            >
+            <a href="/docs/quickstart" className="text-accent hover:underline">
               Quickstart guide →
             </a>
           </li>

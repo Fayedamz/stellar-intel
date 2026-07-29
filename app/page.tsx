@@ -142,9 +142,7 @@ export default function HomePage() {
 
       {/* For Developers */}
       <LandingSection delay={325}>
-        <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
-          For Developers
-        </h2>
+        <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">For Developers</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Link
             href="/docs"
@@ -156,7 +154,8 @@ export default function HomePage() {
               </div>
               <h3 className="mb-2 font-semibold text-gray-900 dark:text-white">Developer Portal</h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                API reference, quickstart guides, authentication, and integration docs for wallets, agents, and third-party apps.
+                API reference, quickstart guides, authentication, and integration docs for wallets,
+                agents, and third-party apps.
               </p>
             </div>
           </Link>

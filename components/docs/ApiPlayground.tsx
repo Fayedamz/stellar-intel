@@ -84,7 +84,10 @@ function EndpointCard({
 
   useEffect(() => {
     if (showTryIt && spec.requestBody) {
-      const schema = spec.requestBody.content['application/json']?.schema as Record<string, unknown>;
+      const schema = spec.requestBody.content['application/json']?.schema as Record<
+        string,
+        unknown
+      >;
       if (schema) {
         setBody(JSON.stringify(getDefaultBody(schema), null, 2));
       }
@@ -106,7 +109,10 @@ function EndpointCard({
       let resolvedPath = path;
       for (const param of pathParams) {
         const paramName = param.slice(1, -1);
-        const val = prompt(`Enter ${paramName}:`, paramName === 'corridor' ? 'usdc-ngn' : paramName === 'anchor' ? 'cowrie' : '');
+        const val = prompt(
+          `Enter ${paramName}:`,
+          paramName === 'corridor' ? 'usdc-ngn' : paramName === 'anchor' ? 'cowrie' : ''
+        );
         if (val) resolvedPath = resolvedPath.replace(param, val);
       }
 
@@ -148,25 +154,33 @@ function EndpointCard({
         </span>
         <span className="font-mono text-sm text-primary-text">{path}</span>
         <span className="ml-auto text-xs text-secondary-text">{spec.summary}</span>
-        {expanded ? <ChevronDown className="h-4 w-4 shrink-0 text-secondary-text" /> : <ChevronRight className="h-4 w-4 shrink-0 text-secondary-text" />}
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 shrink-0 text-secondary-text" />
+        ) : (
+          <ChevronRight className="h-4 w-4 shrink-0 text-secondary-text" />
+        )}
       </button>
 
       {expanded && (
         <div className="border-t border-border px-4 py-4 space-y-4">
-          {spec.description && (
-            <p className="text-sm text-secondary-text">{spec.description}</p>
-          )}
+          {spec.description && <p className="text-sm text-secondary-text">{spec.description}</p>}
 
           {spec.parameters && spec.parameters.length > 0 && (
             <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase text-secondary-text">Parameters</h4>
+              <h4 className="mb-2 text-xs font-semibold uppercase text-secondary-text">
+                Parameters
+              </h4>
               <div className="space-y-1">
                 {spec.parameters.map((param) => (
                   <div key={param.name} className="flex gap-2 text-xs">
                     <span className="font-mono text-accent">{param.name}</span>
-                    <span className="text-secondary-text">{String((param.schema as { type?: string }).type ?? 'string')}</span>
+                    <span className="text-secondary-text">
+                      {String((param.schema as { type?: string }).type ?? 'string')}
+                    </span>
                     {param.required && <span className="text-red-500">required</span>}
-                    {param.description && <span className="text-secondary-text">— {param.description}</span>}
+                    {param.description && (
+                      <span className="text-secondary-text">— {param.description}</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -192,7 +206,9 @@ function EndpointCard({
               <div className="mt-4 space-y-3">
                 {hasBody && (
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-secondary-text">Request Body</label>
+                    <label className="mb-1 block text-xs font-medium text-secondary-text">
+                      Request Body
+                    </label>
                     <textarea
                       value={body}
                       onChange={(e) => setBody(e.target.value)}
@@ -208,7 +224,11 @@ function EndpointCard({
                   disabled={loading}
                   className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-50 transition-colors"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
                   {loading ? 'Sending…' : 'Send Request'}
                 </button>
 
@@ -222,9 +242,13 @@ function EndpointCard({
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xs font-medium text-secondary-text">Response:</span>
-                      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${
-                        response.status < 400 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${
+                          response.status < 400
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}
+                      >
                         {response.status}
                       </span>
                     </div>

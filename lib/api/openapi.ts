@@ -24,23 +24,32 @@ const AnchorPathParam = z.string().openapi({
   description: 'Anchor ID from the registry',
 });
 
-const AmountQueryParam = z.string().optional().openapi({
-  param: { name: 'amount', in: 'query' },
-  example: '100',
-  description: 'Amount to convert (positive decimal)',
-});
+const AmountQueryParam = z
+  .string()
+  .optional()
+  .openapi({
+    param: { name: 'amount', in: 'query' },
+    example: '100',
+    description: 'Amount to convert (positive decimal)',
+  });
 
-const CorridorQueryParam = z.string().optional().openapi({
-  param: { name: 'corridor', in: 'query' },
-  example: 'usdc-ngn',
-  description: 'Filter by corridor ID',
-});
+const CorridorQueryParam = z
+  .string()
+  .optional()
+  .openapi({
+    param: { name: 'corridor', in: 'query' },
+    example: 'usdc-ngn',
+    description: 'Filter by corridor ID',
+  });
 
-const WindowQueryParam = z.string().optional().openapi({
-  param: { name: 'window', in: 'query' },
-  example: '30d',
-  description: 'Time window (7d, 30d, 90d)',
-});
+const WindowQueryParam = z
+  .string()
+  .optional()
+  .openapi({
+    param: { name: 'window', in: 'query' },
+    example: '30d',
+    description: 'Time window (7d, 30d, 90d)',
+  });
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -146,7 +155,9 @@ const RateComparisonSchema = registry.register(
     rates: z.array(AnchorRateSchema),
     pending: z.boolean(),
     bestRateId: z.string().nullable(),
-    errors: z.array(z.object({ anchorId: z.string(), anchorName: z.string(), reason: z.string() })).optional(),
+    errors: z
+      .array(z.object({ anchorId: z.string(), anchorName: z.string(), reason: z.string() }))
+      .optional(),
   })
 );
 
@@ -216,11 +227,14 @@ const MetricsSnapshotSchema = registry.register(
       errorTotal: z.number(),
       errors: z.record(z.string(), z.number()),
     }),
-    anchorLatency: z.record(z.string(), z.object({
-      p50Ms: z.number(),
-      p95Ms: z.number(),
-      sampleCount: z.number(),
-    })),
+    anchorLatency: z.record(
+      z.string(),
+      z.object({
+        p50Ms: z.number(),
+        p95Ms: z.number(),
+        sampleCount: z.number(),
+      })
+    ),
     ratesCache: z.object({ hits: z.number(), misses: z.number() }),
     publisherHealth: PublisherHealthSchema,
   })
@@ -342,7 +356,8 @@ registry.registerPath({
   method: 'get',
   path: '/api/reputation/{anchor}/history',
   summary: 'Get anchor history',
-  description: 'Returns bucketed outcome history for a specific anchor over a configurable time window.',
+  description:
+    'Returns bucketed outcome history for a specific anchor over a configurable time window.',
   tags: ['Reputation'],
   request: {
     params: z.object({ anchor: AnchorPathParam }),
@@ -521,9 +536,7 @@ registry.registerPath({
         'application/json': {
           schema: z.object({
             baseAmount: z.string(),
-            corridors: z.array(
-              z.object({ corridorId: z.string(), best: z.any().nullable() })
-            ),
+            corridors: z.array(z.object({ corridorId: z.string(), best: z.any().nullable() })),
           }),
         },
       },
@@ -539,7 +552,8 @@ registry.registerPath({
   method: 'get',
   path: '/api/metrics',
   summary: 'Get metrics snapshot',
-  description: 'Returns the in-process metrics snapshot including intent counters, anchor latency, and publisher health.',
+  description:
+    'Returns the in-process metrics snapshot including intent counters, anchor latency, and publisher health.',
   tags: ['System'],
   responses: {
     200: {
@@ -553,7 +567,8 @@ registry.registerPath({
   method: 'get',
   path: '/api/publisher/health',
   summary: 'Get publisher health',
-  description: 'Returns the current publisher health status including last run time, batch size, and staleness.',
+  description:
+    'Returns the current publisher health status including last run time, batch size, and staleness.',
   tags: ['System'],
   responses: {
     200: {
@@ -686,7 +701,8 @@ registry.registerPath({
   method: 'get',
   path: '/v1/public/scores',
   summary: 'Get public scores',
-  description: 'Returns public 30-day corridor reputation scores. Supports conditional GET with ETags.',
+  description:
+    'Returns public 30-day corridor reputation scores. Supports conditional GET with ETags.',
   tags: ['Reputation'],
   responses: {
     200: {
