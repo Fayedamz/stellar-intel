@@ -19,7 +19,9 @@ test.describe('Landing page smoke test', () => {
   });
 
   test('renders the hero heading and headline stats', async ({ page }) => {
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('The execution layer for');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      'Health and reputation monitoring'
+    );
     await expect(page.getByText('Anchors tracked')).toBeVisible();
     await expect(page.getByText('Corridors live')).toBeVisible();
     await expect(page.getByText('Countries reachable')).toBeVisible();

@@ -43,16 +43,29 @@ vi.mock('@/hooks/useAnchorRates', () => ({
 }));
 
 describe('HomePage', () => {
-  it('renders execution-layer hero copy', () => {
+  it('renders health-monitor hero copy', () => {
     const { getByRole } = render(<HomePage />);
     const heading = getByRole('heading', { level: 1 });
-    expect(heading.textContent).toContain('The execution layer for');
-    expect(heading.textContent).toContain('stablecoin off-ramps.');
+    expect(heading.textContent).toContain('Health and reputation monitoring');
+    expect(heading.textContent).toContain('for every Stellar anchor.');
   });
 
-  it('subcopy references the execution layer', () => {
+  it('subcopy leads with the probe/reputation framing', () => {
     const { getByText } = render(<HomePage />);
-    expect(getByText(/live sep-38 quotes across every stellar anchor/i)).toBeTruthy();
+    expect(getByText(/uptime, quote-latency, and rate-drift probes/i)).toBeTruthy();
+  });
+
+  it('keeps no intent framing above the fold', () => {
+    const { getByRole, getByText } = render(<HomePage />);
+    expect(getByRole('heading', { level: 1 }).textContent).not.toMatch(/intent/i);
+    expect(getByText(/uptime, quote-latency, and rate-drift probes/i).textContent).not.toMatch(
+      /intent/i
+    );
+  });
+
+  it('keeps the intent framing further down the page', () => {
+    const { getByText } = render(<HomePage />);
+    expect(getByText(/sign a single intent in freighter/i)).toBeTruthy();
   });
 
   it('off-ramp card is the primary CTA and links to /offramp', () => {

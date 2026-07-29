@@ -22,7 +22,7 @@ exports[`HomePage > matches snapshot 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-zap h-3.5 w-3.5"
+          class="lucide lucide-activity h-3.5 w-3.5"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -34,42 +34,42 @@ exports[`HomePage > matches snapshot 1`] = `
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+            d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
           />
         </svg>
-        Stellar Execution Layer
+        Anchor Health Monitor
       </div>
       <h1
         class="max-w-4xl text-4xl font-bold tracking-tight leading-tight text-primary-text dark:text-primary-text sm:text-5xl lg:text-6xl"
         id="hero-heading"
       >
-        The execution layer for
+        Health and reputation monitoring
         <br
           class="hidden sm:block"
         />
         <span
           class="text-accent dark:text-accent"
         >
-          stablecoin off-ramps.
+          for every Stellar anchor.
         </span>
       </h1>
       <p
         class="mx-auto max-w-2xl text-lg text-secondary-text dark:text-secondary-text sm:text-xl"
       >
-        Compare live SEP-38 quotes across every Stellar anchor, then settle a non-custodial USDC off-ramp to Nigeria, Kenya, Ghana, Mexico, and more — in a single signed intent.
+        Continuous uptime, quote-latency, and rate-drift probes across every integrated Stellar anchor, scored on real delivered outcomes — so you can see which anchors actually pay out before you route a dollar.
       </p>
       <div
         class="flex flex-wrap items-center justify-center gap-4 pt-2"
       >
         <a
-          href="/offramp"
-        >
-          Off-ramp now
-        </a>
-        <a
           href="/anchors"
         >
           View anchors
+        </a>
+        <a
+          href="/offramp"
+        >
+          Off-ramp now
         </a>
       </div>
       <div
@@ -1348,7 +1348,7 @@ exports[`HomePage > matches snapshot 1`] = `
           <div
             class="mt-1 text-sm text-gray-600 dark:text-gray-300"
           >
-            Sign once and settle directly on Stellar with Freighter — non-custodial.
+            Sign a single intent in Freighter and settle directly on Stellar — non-custodial.
           </div>
         </div>
       </div>
