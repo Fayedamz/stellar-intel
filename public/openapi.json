@@ -3,12 +3,20 @@
   "info": {
     "title": "Stellar Intel API",
     "version": "1.2.0",
-    "description": "Intent router and anchor rate aggregation API for the Stellar Intel platform."
+    "description": "Intent router and anchor rate aggregation API for the Stellar Intel platform.",
+    "contact": {
+      "name": "Stellar Intel",
+      "url": "https://github.com/ezedike-evan/stellar-intel"
+    }
   },
   "servers": [
     {
       "url": "https://stellar-intel.vercel.app",
       "description": "Production"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Development"
     }
   ],
   "components": {
@@ -30,7 +38,7 @@
           },
           "publicKey": {
             "type": "string",
-            "pattern": "^G[A-Z0-9]{55}$"
+            "pattern": "^G[A-Z2-7]{55}$"
           }
         },
         "required": [
@@ -56,7 +64,7 @@
           },
           "publicKey": {
             "type": "string",
-            "pattern": "^G[A-Z0-9]{55}$"
+            "pattern": "^G[A-Z2-7]{55}$"
           }
         },
         "required": [
@@ -225,11 +233,429 @@
           "sender",
           "recipient"
         ]
+      },
+      "AnchorRate": {
+        "type": "object",
+        "properties": {
+          "anchorId": {
+            "type": "string"
+          },
+          "anchorName": {
+            "type": "string"
+          },
+          "corridorId": {
+            "type": "string"
+          },
+          "fee": {
+            "type": "string"
+          },
+          "feeType": {
+            "type": "string"
+          },
+          "exchangeRate": {
+            "type": "string"
+          },
+          "totalReceived": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "quoteId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "anchorId",
+          "anchorName",
+          "corridorId",
+          "fee",
+          "feeType",
+          "exchangeRate",
+          "totalReceived",
+          "updatedAt",
+          "source"
+        ]
+      },
+      "RateComparison": {
+        "type": "object",
+        "properties": {
+          "corridorId": {
+            "type": "string"
+          },
+          "rates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnchorRate"
+            }
+          },
+          "pending": {
+            "type": "boolean"
+          },
+          "bestRateId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "anchorId": {
+                  "type": "string"
+                },
+                "anchorName": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "anchorId",
+                "anchorName",
+                "reason"
+              ]
+            }
+          }
+        },
+        "required": [
+          "corridorId",
+          "rates",
+          "pending",
+          "bestRateId"
+        ]
+      },
+      "DisputeRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "intentHash": {
+            "type": "string"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "anchorId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "disputed": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "intentHash",
+          "publicKey",
+          "anchorId",
+          "reason",
+          "disputed",
+          "createdAt"
+        ]
+      },
+      "DisputeAdmin": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "submittedBy": {
+            "type": "string"
+          },
+          "anchorId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "resolvedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "submittedBy",
+          "anchorId",
+          "reason",
+          "status",
+          "createdAt",
+          "resolvedAt"
+        ]
+      },
+      "LeaderboardEntry": {
+        "type": "object",
+        "properties": {
+          "anchor_id": {
+            "type": "string"
+          },
+          "composite": {
+            "type": "number"
+          },
+          "fill_rate": {
+            "type": "number"
+          },
+          "settle_p50": {
+            "type": "number"
+          },
+          "slippage_p50": {
+            "type": "number"
+          },
+          "n": {
+            "type": "number"
+          },
+          "onChain": {}
+        },
+        "required": [
+          "anchor_id",
+          "composite",
+          "fill_rate",
+          "settle_p50",
+          "slippage_p50",
+          "n"
+        ]
+      },
+      "LeaderboardResponse": {
+        "type": "object",
+        "properties": {
+          "leaderboard": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntry"
+            }
+          },
+          "corridor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "generatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "leaderboard",
+          "corridor",
+          "generatedAt"
+        ]
+      },
+      "PublisherHealth": {
+        "type": "object",
+        "properties": {
+          "lastRun": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastBatchSize": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lastError": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "staleSinceMs": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "lastRun",
+          "lastBatchSize",
+          "lastError",
+          "staleSinceMs"
+        ]
+      },
+      "MetricsSnapshot": {
+        "type": "object",
+        "properties": {
+          "intents": {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "number"
+              },
+              "errorTotal": {
+                "type": "number"
+              },
+              "errors": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "success",
+              "errorTotal",
+              "errors"
+            ]
+          },
+          "anchorLatency": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "p50Ms": {
+                  "type": "number"
+                },
+                "p95Ms": {
+                  "type": "number"
+                },
+                "sampleCount": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "p50Ms",
+                "p95Ms",
+                "sampleCount"
+              ]
+            }
+          },
+          "ratesCache": {
+            "type": "object",
+            "properties": {
+              "hits": {
+                "type": "number"
+              },
+              "misses": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "hits",
+              "misses"
+            ]
+          },
+          "publisherHealth": {
+            "$ref": "#/components/schemas/PublisherHealth"
+          }
+        },
+        "required": [
+          "intents",
+          "anchorLatency",
+          "ratesCache",
+          "publisherHealth"
+        ]
       }
     },
     "parameters": {}
   },
   "paths": {
+    "/api/rates/{corridor}": {
+      "get": {
+        "summary": "Get live rates for a corridor",
+        "description": "Returns live SEP-38 firm quotes (with SEP-24/SEP-6 fallback) for every integrated anchor serving the given corridor. Results are cached for 15 seconds.",
+        "tags": [
+          "Rates"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "usdc-ngn",
+              "description": "Corridor ID (e.g. usdc-ngn, usdc-kes)"
+            },
+            "required": true,
+            "description": "Corridor ID (e.g. usdc-ngn, usdc-kes)",
+            "name": "corridor",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "100",
+              "description": "Amount to convert (positive decimal)"
+            },
+            "required": false,
+            "description": "Amount to convert (positive decimal)",
+            "name": "amount",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Bypass cache"
+            },
+            "required": false,
+            "description": "Bypass cache",
+            "name": "forceRefresh",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rate comparison for the corridor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateComparison"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown corridor or invalid amount",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/intent/offramp": {
       "post": {
         "summary": "Submit an off-ramp intent",
@@ -248,7 +674,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Route resolved and unsigned transaction built",
             "content": {
               "application/json": {
@@ -268,8 +694,821 @@
               }
             }
           },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Transaction build failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reputation/{anchor}": {
+      "get": {
+        "summary": "Get anchor reputation",
+        "description": "Returns reputation data for a specific anchor. When a corridor query param is provided, returns per-corridor aggregates for 7/30/90-day windows. Without it, returns scorecards.",
+        "tags": [
+          "Reputation"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "cowrie",
+              "description": "Anchor ID from the registry"
+            },
+            "required": true,
+            "description": "Anchor ID from the registry",
+            "name": "anchor",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "usdc-ngn",
+              "description": "Filter by corridor ID"
+            },
+            "required": false,
+            "description": "Filter by corridor ID",
+            "name": "corridor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anchor reputation data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "anchorId": {
+                      "type": "string"
+                    },
+                    "scorecards": {},
+                    "windows": {},
+                    "corridor": {
+                      "type": "string"
+                    },
+                    "fetchedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "anchorId"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing anchor param",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reputation/{anchor}/history": {
+      "get": {
+        "summary": "Get anchor history",
+        "description": "Returns bucketed outcome history for a specific anchor over a configurable time window.",
+        "tags": [
+          "Reputation"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "cowrie",
+              "description": "Anchor ID from the registry"
+            },
+            "required": true,
+            "description": "Anchor ID from the registry",
+            "name": "anchor",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "30d",
+              "description": "Time window (7d, 30d, 90d)"
+            },
+            "required": false,
+            "description": "Time window (7d, 30d, 90d)",
+            "name": "window",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bucketed history data",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown anchor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reputation/leaderboard": {
+      "get": {
+        "summary": "Get reputation leaderboard",
+        "description": "Returns a ranked list of all anchors by composite reputation score. Optionally filter by corridor.",
+        "tags": [
+          "Reputation"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "usdc-ngn",
+              "description": "Filter by corridor ID"
+            },
+            "required": false,
+            "description": "Filter by corridor ID",
+            "name": "corridor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leaderboard response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reputation/append": {
+      "post": {
+        "summary": "Append outcome log row",
+        "description": "The single server-side write path for reputation outcome rows.",
+        "tags": [
+          "Reputation"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "intentHash": {
+                    "type": "string"
+                  },
+                  "anchorId": {
+                    "type": "string"
+                  },
+                  "corridor": {
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "enum": [
+                      "completed",
+                      "partial",
+                      "refunded",
+                      "expired",
+                      "error"
+                    ]
+                  }
+                },
+                "required": [
+                  "intentHash",
+                  "anchorId",
+                  "corridor",
+                  "outcome"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Outcome appended",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "intentHash": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "intentHash"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reputation/dispute": {
+      "post": {
+        "summary": "Submit a reputation dispute",
+        "description": "Submits a dispute against an intent outcome. The request must be Ed25519-signed by the original sender.",
+        "tags": [
+          "Reputation"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "intentHash": {
+                    "type": "string"
+                  },
+                  "publicKey": {
+                    "type": "string"
+                  },
+                  "signature": {
+                    "type": "string"
+                  },
+                  "anchorId": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "intentHash",
+                  "publicKey",
+                  "signature",
+                  "anchorId",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dispute created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signature verification failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (10/24h)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sep6/withdraw": {
+      "post": {
+        "summary": "SEP-6 withdraw proxy",
+        "description": "Proxies a SEP-6 withdrawal request to the specified anchor transfer server. Runs server-side to avoid CORS issues.",
+        "tags": [
+          "SEP-6"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transferServer": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "assetCode": {
+                    "type": "string"
+                  },
+                  "account": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "transferServer",
+                  "assetCode",
+                  "account"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Anchor withdraw response (passthrough)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/snapshot": {
+      "get": {
+        "summary": "Get best-anchor snapshot",
+        "description": "Returns the best anchor per corridor for a given USDC amount. Used for the landing page teaser. Cached for 10 minutes.",
+        "tags": [
+          "Rates"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "100",
+              "description": "Amount to convert (positive decimal)"
+            },
+            "required": false,
+            "description": "Amount to convert (positive decimal)",
+            "name": "amount",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Best anchor snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "baseAmount": {
+                      "type": "string"
+                    },
+                    "corridors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "corridorId": {
+                            "type": "string"
+                          },
+                          "best": {}
+                        },
+                        "required": [
+                          "corridorId"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "baseAmount",
+                    "corridors"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid amount",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics": {
+      "get": {
+        "summary": "Get metrics snapshot",
+        "description": "Returns the in-process metrics snapshot including intent counters, anchor latency, and publisher health.",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Metrics snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSnapshot"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/publisher/health": {
+      "get": {
+        "summary": "Get publisher health",
+        "description": "Returns the current publisher health status including last run time, batch size, and staleness.",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Publisher health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublisherHealth"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/publisher/tick": {
+      "get": {
+        "summary": "Trigger publisher tick",
+        "description": "Triggers a batch of reputation outcome submissions to the Soroban oracle contract. Protected by CRON_SECRET.",
+        "tags": [
+          "System"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tick completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "submitted": {
+                      "type": "number"
+                    },
+                    "skipped": {
+                      "type": "number"
+                    },
+                    "txHash": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "tickedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "submitted",
+                    "skipped",
+                    "txHash",
+                    "tickedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tick already in progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/ping": {
+      "get": {
+        "summary": "MCP health check",
+        "description": "Simple health check / liveness probe for the MCP integration.",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/disputes": {
+      "get": {
+        "summary": "List disputes (admin)",
+        "description": "Lists all disputes. Requires admin authentication.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of disputes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DisputeAdmin"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Resolve a dispute (admin)",
+        "description": "Accepts or rejects a dispute. Requires admin authentication.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "accept",
+                      "reject"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated dispute",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeAdmin"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dispute not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/public/scores": {
+      "get": {
+        "summary": "Get public scores",
+        "description": "Returns public 30-day corridor reputation scores. Supports conditional GET with ETags.",
+        "tags": [
+          "Reputation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Public scores array",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "anchorId": {
+                        "type": "string"
+                      },
+                      "corridor": {
+                        "type": "string"
+                      },
+                      "score30d": {}
+                    },
+                    "required": [
+                      "anchorId",
+                      "corridor"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified"
+          },
+          "429": {
+            "description": "Rate limited",
             "content": {
               "application/json": {
                 "schema": {

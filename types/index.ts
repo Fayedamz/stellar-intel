@@ -62,7 +62,13 @@ export interface AnchorRate {
   exchangeRate: number | null; // local currency units per sold asset; null when unreachable
   totalReceived: number | null; // computed: (amount - fee) * exchangeRate; null when anchor is unreachable
   updatedAt: Date;
-  /** Discriminates the origin of the rate data. */
+  /**
+   * Discriminates the origin of the rate data. `sep38` is the only firm,
+   * binding quote source; every other source (besides `unavailable`) is an
+   * estimate derived from published fee schedules and must never be
+   * presented or scored as equivalent-confidence to a firm SEP-38 quote.
+   * See `isIndicativeRateSource`.
+   */
   source: 'sep38' | 'sep24-fee' | 'sep6-info' | 'sep6-fee' | 'unavailable';
   expiresAt?: Date | undefined;
   /**
@@ -73,6 +79,34 @@ export interface AnchorRate {
   quoteId?: string;
   /** Row-level quote lifecycle state. Only meaningful for source === 'sep38'. */
   quoteStatus?: 'firm' | 'expiring' | 'refreshing';
+  /**
+   * Composite reputation score for this anchor in the range [0, 1].
+   * Derived from fill rate, slippage, and settlement latency.
+   * Present when the leaderboard API is reachable; absent otherwise.
+   */
+  reputationScore?: number;
+  /**
+   * 1-based rank position in the reputation leaderboard (lower = better).
+   * Present when the leaderboard API is reachable; absent otherwise.
+   */
+  reputationRank?: number;
+}
+
+/**
+ * Rate sources that are estimates, not binding quotes. Modeled generally on
+ * `AnchorRate.source` rather than special-cased per anchor id, so any anchor
+ * whose only integration is SEP-6 (or the SEP-24 /fee fallback) is labeled
+ * indicative — not only Cowrie, the first anchor this applied to.
+ */
+const INDICATIVE_RATE_SOURCES: ReadonlySet<AnchorRate['source']> = new Set([
+  'sep24-fee',
+  'sep6-info',
+  'sep6-fee',
+]);
+
+/** True when a rate is an estimate rather than a firm SEP-38 quote. */
+export function isIndicativeRateSource(source: AnchorRate['source']): boolean {
+  return INDICATIVE_RATE_SOURCES.has(source);
 }
 
 export interface AnchorRateError {
@@ -230,6 +264,8 @@ export interface Sep24WithdrawRequest {
   amount: string;
   account: string; // user's Stellar public key
   jwt: string;
+  /** SEP-38 firm quote id, when the anchor supports quote-bound withdrawals. */
+  quoteId?: string;
 }
 
 /** Response from POST /transactions/withdraw/interactive. */
@@ -468,6 +504,40 @@ export interface HopChainExecutionResult {
   failedAt?: string;
 }
 
+/** One leg of a multi-anchor split — the tranche of the order routed to a single anchor. */
+export interface PlanLeg {
+  anchorId: string;
+  anchorName: string;
+  quoteId: string; // SEP-38 quote id backing this leg
+  sellAmount: string; // tranche routed to this anchor (sell asset)
+  netAmount: string; // delivered by this leg (buy asset)
+  fee: string; // fee for this leg (sell asset)
+  price: string; // exchange rate used for this leg
+}
+
+/**
+ * A multi-anchor execution plan: the order is split across ranked anchors and
+ * executed as a single atomic multi-op Stellar transaction (all legs settle or
+ * none do). Legs are ordered best-price first.
+ */
+export interface MultiAnchorPlan {
+  type: 'multi_anchor';
+  legs: PlanLeg[];
+  totalSell: string; // sum of leg sellAmounts (equals the requested order size when fully filled)
+  netAmount: string; // sum of leg netAmounts (aggregate delivered)
+}
+
+/** Either a single-anchor plan or a multi-anchor split. */
+export type ExecutionPlan = Plan | MultiAnchorPlan;
+
+/** Result of the multi-anchor solver: a split plan to execute or a typed error. */
+export type MultiSolverResult =
+  | { ok: true; plan: MultiAnchorPlan }
+  | { ok: false; error: 'no_eligible_route' }
+  | { ok: false; error: 'floor_not_met'; details: string }
+  | { ok: false; error: 'all_quotes_expired'; details: string }
+  | { ok: false; error: 'insufficient_liquidity'; details: string };
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 /** Shape returned by API routes on error. */
@@ -496,6 +566,7 @@ export type RiskLevel = 'low' | 'medium' | 'high';
 export type ExecuteDrawerStep =
   | 'idle'
   | 'authenticating'
+  | 'quoting'
   | 'initiating'
   | 'kyc'
   | 'form'

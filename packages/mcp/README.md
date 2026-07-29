@@ -54,6 +54,11 @@ npm run dev     # same, via ts-node, no build step
 Point any MCP-capable client (Claude Desktop, an agent framework, etc.) at
 the built `dist/index.js` as a stdio command.
 
+## Documentation
+
+Full API reference, quickstart guides, and integration docs are available in the
+[Stellar Intel Developer Portal](https://stellar-intel.vercel.app/docs).
+
 ## Related
 
 - [`@stellarintel/publisher`](https://www.npmjs.com/package/@stellarintel/publisher) — off-chain publisher for the reputation oracle this server will eventually expose.
