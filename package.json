@@ -45,6 +45,8 @@
     "@stellar/stellar-sdk": "^16.0.1",
     "@stellarintel/publisher": "^0.1.0",
     "clsx": "^2.1.1",
+    "graphql": "^16.14.2",
+    "graphql-yoga": "^5.21.2",
     "lucide-react": "^1.11.0",
     "next": "16.2.9",
     "pg": "^8.13.1",

@@ -164,6 +164,16 @@ export function RateTable({
               className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
             >
               <SortToggle
+                label="Reputation"
+                direction={sort?.key === 'reputation' ? sort.direction : null}
+                onClick={() => setSort((prev) => nextSortState(prev, 'reputation'))}
+              />
+            </th>
+            <th
+              scope="col"
+              className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+            >
+              <SortToggle
                 label="Fee"
                 direction={sort?.key === 'fee' ? sort.direction : null}
                 onClick={() => setSort((prev) => nextSortState(prev, 'fee'))}
@@ -200,7 +210,7 @@ export function RateTable({
         <tbody>
           {!isLoading && error && (
             <tr>
-              <td colSpan={5} className="px-4 py-8 text-center">
+              <td colSpan={6} className="px-4 py-8 text-center">
                 <p className="mb-3 text-sm text-red-500">{error}</p>
                 <button
                   onClick={() => window.location.reload()}
@@ -219,7 +229,7 @@ export function RateTable({
             anchorErrors.length === 0 &&
             (!rates.pending || rates.pending.length === 0) && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center">
+                <td colSpan={6} className="px-4 py-10 text-center">
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     No rates available
                     {sourceCurrency && destCurrency
@@ -319,6 +329,24 @@ export function RateTable({
                         />
                       </div>
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      {rate.reputationRank != null ? (
+                        <span
+                          title={`Reputation score: ${((rate.reputationScore ?? 0) * 100).toFixed(1)}%`}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            rate.reputationRank === 1
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                              : rate.reputationRank <= 3
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          #{rate.reputationRank}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-500">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
                       {rate.fee !== null ? formatCurrency(rate.fee, 'USD') : '—'}
                     </td>
@@ -361,7 +389,7 @@ export function RateTable({
                       </div>
                     </td>
                   </tr>
-                  {isExpanded && <RateRowDetail rate={rate} currency={currency} colSpan={5} />}
+                  {isExpanded && <RateRowDetail rate={rate} currency={currency} colSpan={6} />}
                 </Fragment>
               );
             })}
@@ -387,6 +415,7 @@ export function RateTable({
                     <QuotePill source="unavailable" />
                   </div>
                 </td>
+                <td className="px-4 py-3 text-right text-gray-400 dark:text-gray-500">—</td>
                 <td className="px-4 py-3 text-right text-gray-400 dark:text-gray-500">—</td>
                 <td className="px-4 py-3 text-right text-gray-400 dark:text-gray-500">—</td>
                 <td className="px-4 py-3 text-right text-gray-400 dark:text-gray-500">—</td>
@@ -424,6 +453,7 @@ export function RateTable({
                     </span>
                   </div>
                 </td>
+                <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">—</td>
                 <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">—</td>
                 <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">—</td>
                 <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">

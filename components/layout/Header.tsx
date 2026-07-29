@@ -20,6 +20,7 @@ const STALE_THRESHOLD_MS = 15 * 60 * 1000;
 const NAV_LINKS = [
   { href: '/offramp', label: 'Off-ramp' },
   { href: '/anchors', label: 'Anchors' },
+  { href: '/docs', label: 'Docs' },
 ];
 
 export function Header() {
