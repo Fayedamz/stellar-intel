@@ -1,9 +1,10 @@
 /**
  * lib/mcp/offramp.ts
  *
- * Shared core for the MCP off-ramp tools (issues #135 / #136):
- *   - getQuote:    best net-received quote for a corridor + amount (#135)
+ * Shared core for the MCP off-ramp tools (issues #135 / #136 / #819):
+ *   - getQuote:      best net-received quote for a corridor + amount (#135)
  *   - prepareIntent: unsigned envelope + unsigned tx for agent signing (#136)
+ *   - executeIntent: verifies + submits an agent-signed intent (#819)
  *
  * The logic mirrors the existing HTTP route (app/api/intent/offramp/route.ts)
  * and reuses the canonical hashing in lib/intent/hash.ts so the MCP surface and
@@ -12,7 +13,7 @@
  */
 import { z } from 'zod';
 import { hashIntent, type Intent } from '@/lib/intent/hash';
-import { USDC_ISSUER } from '@/lib/config';
+import { USDC_ISSUER, HORIZON_URL } from '@/lib/config';
 import { STELLAR_PUBKEY_PATTERN, AMOUNT_7DP_PATTERN } from '@/lib/patterns';
 import { fetchCorridorRates } from '@/lib/stellar/server-rates';
 
@@ -97,7 +98,15 @@ export type PrepareOutput = z.infer<typeof PrepareOutputSchema>;
 export class OfframpToolError extends Error {
   constructor(
     message: string,
-    public readonly code: 'NO_ROUTE' | 'TX_BUILD_FAILED' | 'RATE_UNAVAILABLE'
+    public readonly code:
+      | 'NO_ROUTE'
+      | 'TX_BUILD_FAILED'
+      | 'RATE_UNAVAILABLE'
+      | 'INTENT_HASH_MISMATCH'
+      | 'SIGNATURE_INVALID'
+      | 'TX_MISMATCH'
+      | 'UNSIGNED_TX'
+      | 'SUBMIT_FAILED'
   ) {
     super(message);
     this.name = 'OfframpToolError';
@@ -237,4 +246,167 @@ export async function prepareIntent(input: PrepareInput): Promise<PrepareOutput>
     unsignedEnvelope: { intent, intentHash },
     unsignedTx,
   });
+}
+
+// ─── Tool: intel.execute (#819) ──────────────────────────────────────────────
+//
+// Carries a prepared intent through to signed execution. Stellar Intel never
+// signs anything here — the agent signs the intent hash (an attestation of
+// consent) and the Stellar transaction itself with its own wallet, entirely
+// outside this process; this tool only verifies the signed transaction still
+// matches the intent it was prepared for and submits it to Horizon.
+
+/** Input schema for intel.execute: a prepared envelope plus the agent's own signatures. */
+export const ExecuteInputSchema = z.object({
+  /** The exact envelope returned by intel.offramp.prepare. */
+  unsignedEnvelope: UnsignedEnvelopeSchema,
+  /**
+   * Base64 ed25519 signature over `unsignedEnvelope.intentHash` (as UTF-8 bytes),
+   * produced by the intent's `sender` key — an off-chain attestation that the
+   * agent authorised this exact intent.
+   */
+  signature: z.string().min(1),
+  /**
+   * Base64 XDR of the `unsignedTx` from intel.offramp.prepare, signed by the
+   * sender's own wallet. This is the transaction submitted to Horizon.
+   */
+  signedTx: z.string().min(1),
+});
+export type ExecuteInput = z.infer<typeof ExecuteInputSchema>;
+
+/** Output schema for intel.execute: the Horizon submission result. */
+export const ExecuteOutputSchema = z.object({
+  status: z.literal('submitted'),
+  hash: z.string(),
+  ledger: z.number(),
+  corridorId: z.string(),
+  anchorId: z.string(),
+});
+export type ExecuteOutput = z.infer<typeof ExecuteOutputSchema>;
+
+/**
+ * Verifies a signed intent + transaction against the corridor route it was
+ * prepared for, then submits the transaction to Horizon. Throws
+ * {@link OfframpToolError} for any mismatch between the signed material and
+ * the intent it claims to execute, or if Horizon rejects the submission.
+ */
+export async function executeIntent(input: ExecuteInput): Promise<ExecuteOutput> {
+  const parsed = ExecuteInputSchema.parse(input);
+  const { intent, intentHash } = parsed.unsignedEnvelope;
+
+  const recomputedHash = await hashIntent(intent as unknown as Intent);
+  if (recomputedHash !== intentHash) {
+    throw new OfframpToolError(
+      'intentHash does not match the intent payload',
+      'INTENT_HASH_MISMATCH'
+    );
+  }
+
+  const id = corridorId(intent.sourceAsset, intent.destinationAsset);
+  const route = ANCHOR_ROUTING[id];
+  if (!route) {
+    throw new OfframpToolError(`No route for corridor ${id}`, 'NO_ROUTE');
+  }
+
+  const { Keypair, TransactionBuilder, Networks, Horizon } = await import('@stellar/stellar-sdk');
+
+  let senderKey: InstanceType<typeof Keypair>;
+  try {
+    senderKey = Keypair.fromPublicKey(intent.sender);
+  } catch {
+    throw new OfframpToolError('sender is not a valid Stellar public key', 'SIGNATURE_INVALID');
+  }
+
+  let signatureValid: boolean;
+  try {
+    signatureValid = senderKey.verify(
+      Buffer.from(intentHash, 'utf8'),
+      Buffer.from(parsed.signature, 'base64')
+    );
+  } catch {
+    signatureValid = false;
+  }
+  if (!signatureValid) {
+    throw new OfframpToolError(
+      'Signature does not verify against the intent hash and sender key',
+      'SIGNATURE_INVALID'
+    );
+  }
+
+  let tx: ReturnType<typeof TransactionBuilder.fromXDR>;
+  try {
+    tx = TransactionBuilder.fromXDR(parsed.signedTx, Networks.PUBLIC);
+  } catch {
+    throw new OfframpToolError('signedTx is not a valid Stellar transaction XDR', 'TX_MISMATCH');
+  }
+
+  if ('signatures' in tx && tx.signatures.length === 0) {
+    throw new OfframpToolError('signedTx carries no signatures', 'UNSIGNED_TX');
+  }
+  if (!('source' in tx) || tx.source !== intent.sender) {
+    throw new OfframpToolError(
+      'Transaction source account does not match intent.sender',
+      'TX_MISMATCH'
+    );
+  }
+  if (!('operations' in tx)) {
+    throw new OfframpToolError('signedTx has no operations', 'TX_MISMATCH');
+  }
+
+  const [operation, ...rest] = tx.operations;
+  const payment = operation as
+    | {
+        type: string;
+        destination?: string;
+        amount?: string;
+        asset?: { code: string; issuer: string };
+      }
+    | undefined;
+  // Amount comes back from XDR normalized to Stellar's fixed 7dp representation
+  // (e.g. "100" -> "100.0000000"), so compare numerically rather than as strings.
+  if (
+    rest.length > 0 ||
+    !payment ||
+    payment.type !== 'payment' ||
+    payment.destination !== route.anchorAccount ||
+    payment.amount === undefined ||
+    Number(payment.amount) !== Number(intent.amount) ||
+    payment.asset?.code !== intent.sourceAsset ||
+    payment.asset?.issuer !== USDC_ISSUER
+  ) {
+    throw new OfframpToolError('Transaction operations do not match the intent', 'TX_MISMATCH');
+  }
+
+  const expectedMemo = Buffer.from(intentHash, 'hex');
+  const memo = ('memo' in tx ? tx.memo : undefined) as
+    | { type: string; value?: Buffer | string }
+    | undefined;
+  if (memo?.type !== 'hash' || !Buffer.isBuffer(memo.value) || !memo.value.equals(expectedMemo)) {
+    throw new OfframpToolError('Transaction memo does not match the intent hash', 'TX_MISMATCH');
+  }
+
+  const server = new Horizon.Server(HORIZON_URL);
+  try {
+    const result = await server.submitTransaction(tx);
+    return ExecuteOutputSchema.parse({
+      status: 'submitted',
+      hash: result.hash,
+      ledger: result.ledger,
+      corridorId: id,
+      anchorId: route.anchorId,
+    });
+  } catch (err) {
+    const horizonErr = err as {
+      response?: { data?: { extras?: { result_codes?: Record<string, string[]> } } };
+    };
+    const codes = horizonErr?.response?.data?.extras?.result_codes;
+    const detail = codes
+      ? Object.entries(codes)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+          .join(' | ')
+      : err instanceof Error
+        ? err.message
+        : 'Unknown Horizon error';
+    throw new OfframpToolError(`Transaction submission failed: ${detail}`, 'SUBMIT_FAILED');
+  }
 }

@@ -45,15 +45,16 @@ are in `lib/reputation/migrations/`.
 
 ## API
 
-| Method & path                                   | Purpose                                   |
-| ----------------------------------------------- | ----------------------------------------- |
-| `GET /api/reputation/leaderboard?corridor=…`    | Ranked anchors (optionally per-corridor). |
-| `GET /api/reputation/[anchor]`                  | Current score + bands for one anchor.     |
-| `GET /api/reputation/[anchor]/history?window=…` | Historical score series.                  |
-| `POST /api/reputation/append`                   | Append a signed outcome tuple.            |
-| `POST /api/reputation/dispute`                  | File a dispute against an outcome.        |
-| `POST /api/reputation/reconcile`                | Reconcile aggregates (maintenance).       |
-| `POST /api/reputation/refresh`                  | Refresh materialized aggregates.          |
+| Method & path                                   | Purpose                                                                                                                        |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/reputation/leaderboard?corridor=…`    | Ranked anchors (optionally per-corridor).                                                                                      |
+| `GET /api/reputation/[anchor]`                  | Current score + bands for one anchor.                                                                                          |
+| `GET /api/reputation/[anchor]/history?window=…` | Historical score series.                                                                                                       |
+| `POST /api/reputation/append`                   | Append a signed outcome tuple.                                                                                                 |
+| `POST /api/reputation/dispute`                  | File a dispute against an outcome.                                                                                             |
+| `POST /api/reputation/reconcile`                | Reconcile aggregates (maintenance).                                                                                            |
+| `POST /api/reputation/refresh`                  | Refresh materialized aggregates.                                                                                               |
+| `GET /api/reputation/sdf-export`                | Candidate export for SDF's Anchor Directory — see [`docs/ANCHOR_DIRECTORY_CONTRIBUTION.md`](ANCHOR_DIRECTORY_CONTRIBUTION.md). |
 
 Outcomes are signed and replayable, so a dispute resolves on evidence, not
 opinion. Admin-only review is gated by `ADMIN_SECRET_KEY` via

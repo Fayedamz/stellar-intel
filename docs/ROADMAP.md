@@ -1,6 +1,6 @@
 # Stellar Intel — Roadmap
 
-> Five milestone versions, tickable. The wave structure mirrors the numbered
+> Six milestone versions, tickable. The wave structure mirrors the numbered
 > tickets in the [GitHub issue tracker](https://github.com/Ezedike-Evan/stellar-intel/issues)
 > — this document is the product-level view a grant reviewer, contributor, or
 > anchor partner reads to know **what ships next** and **in what order**.
@@ -39,19 +39,21 @@ opens. A wave does not open early. A wave does not ship partial.
 - [v3 Guaranteed](#v3-guaranteed) — intent-level SLAs
 - [v4 Universal](#v4-universal) — SDK + MCP GA + embeddable widget
 - [v5 Institutional](#v5-institutional) — compliance-grade primitives
+- [v6 Ecosystem Infrastructure](#v6-ecosystem-infrastructure) — webhooks, GraphQL, multi-language SDKs, decentralization
 - [Cross-cutting tracks](#cross-cutting-tracks)
 
 ---
 
 ## At a glance
 
-| Version              | Theme                                                 | Scope                               | Target gate                                                                | Status                                                                                    |
-| -------------------- | ----------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **v1 Executable**    | A correct, demonstrable off-ramp                      | `#001–#150` · 150 tickets · 4 waves | `npm run test:release` green; feature flags default-on                     | 🟢 Wave 1.0 substantially shipped                                                         |
-| **v2 Observable**    | Reputation as product surface, Soroban on mainnet     | `#151–#250` · 100 tickets · 4 waves | Soroban contract deployed, ≥3 publishers, ≥1000 outcomes                   | 🟡 Foundations landed (store + API, oracle on testnet, MCP); mainnet + public API pending |
-| **v3 Guaranteed**    | Intent-level SLAs, slippage bounds, recurring intents | Planned · scope decomposed post-v2  | Slippage-bound compliance ≥ 99.5% over 10k intents                         | ⚪ Not started                                                                            |
-| **v4 Universal**     | SDK + MCP GA + embeddable widget                      | Planned · scope decomposed post-v3  | `@stellarintel/sdk` + `@stellarintel/mcp` on npm; 3 reference integrations | ⚪ Not started                                                                            |
-| **v5 Institutional** | Compliance-grade primitives, audit-ready              | Planned · scope decomposed post-v4  | Third-party audit report published; SBOM on every release                  | ⚪ Not started                                                                            |
+| Version                         | Theme                                                    | Scope                               | Target gate                                                                        | Status                                                                                    |
+| ------------------------------- | -------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **v1 Executable**               | A correct, demonstrable off-ramp                         | `#001–#150` · 150 tickets · 4 waves | `npm run test:release` green; feature flags default-on                             | 🟢 Wave 1.0 substantially shipped                                                         |
+| **v2 Observable**               | Reputation as product surface, Soroban on mainnet        | `#151–#250` · 100 tickets · 4 waves | Soroban contract deployed, ≥3 publishers, ≥1000 outcomes                           | 🟡 Foundations landed (store + API, oracle on testnet, MCP); mainnet + public API pending |
+| **v3 Guaranteed**               | Intent-level SLAs, slippage bounds, recurring intents    | Planned · scope decomposed post-v2  | Slippage-bound compliance ≥ 99.5% over 10k intents                                 | ⚪ Not started                                                                            |
+| **v4 Universal**                | SDK + MCP GA + embeddable widget                         | Planned · scope decomposed post-v3  | `@stellarintel/sdk` + `@stellarintel/mcp` on npm; 3 reference integrations         | ⚪ Not started                                                                            |
+| **v5 Institutional**            | Compliance-grade primitives, audit-ready                 | Planned · scope decomposed post-v4  | Third-party audit report published; SBOM on every release                          | ⚪ Not started                                                                            |
+| **v6 Ecosystem Infrastructure** | Webhooks, GraphQL, multi-language SDKs, decentralization | Planned · scope decomposed post-v5  | Corridor rate oracle read by ≥1 third-party contract; the "ripped out" test passes | ⚪ Not started                                                                            |
 
 ---
 
@@ -393,8 +395,8 @@ compounds.
 - [ ] `#231` `GET /v1/public/scores` (anchor, corridor) → score
 - [ ] `#232` `GET /v1/public/outcomes` paginated feed
 - [ ] `#233` Rate limits + API-key tier (free / paid)
-- [ ] `#234` OpenAPI spec checked into `docs/openapi.yaml`
-- [ ] `#235` `api-docs` page at `/docs/api` (Redoc / Scalar)
+- [x] `#234` OpenAPI spec generated to `public/openapi.json` (15 endpoints, 15 schemas)
+- [x] `#235` `api-docs` page at `/docs/api` (interactive playground with live try-it panels)
 - [ ] `#239` **Probe service** (independent track) — nightly $1 synthetic
       off-ramps to seed corridor coverage
 - [ ] `#240` Probe-signal reputation weighting (lower weight than organic)
@@ -513,6 +515,92 @@ processor) can build on.
 
 ---
 
+## v6 Ecosystem Infrastructure
+
+**Thesis.** By this point the execution layer, the reputation oracle, and
+the agent surface are proven. v6 is the ecosystem-infrastructure endgame:
+push the SDK surface into languages the TypeScript ecosystem doesn't reach,
+open the API up to event-driven and query-flexible consumers, give
+third-party developers a real front door, and start moving control away
+from a single team's keys. Tracked as epic
+[#808](https://github.com/ezedike-evan/stellar-intel/issues/808); scope
+decomposed into the child issues below.
+
+- [ ] **Rust SDK with on-chain Soroban-native oracle reads** — generated
+      from the OpenAPI spec like the TS (`#806`) and Python (`#821`) SDKs,
+      plus a read path that queries the corridor rate oracle contract
+      directly over Soroban RPC, independent of the REST API being up
+      ([#868](https://github.com/ezedike-evan/stellar-intel/issues/868))
+- [ ] **Webhooks with HMAC signing** — subscribe to intent/settlement
+      lifecycle events instead of polling; signed deliveries, retry with
+      backoff, dead-letter after repeated failures
+      ([#869](https://github.com/ezedike-evan/stellar-intel/issues/869))
+- [ ] **GraphQL layer (additive)** — query corridor rates, anchor
+      reputation, and intent status in one round trip, alongside the REST
+      API rather than replacing it
+      ([#870](https://github.com/ezedike-evan/stellar-intel/issues/870))
+- [ ] **Developer portal + interactive docs** — browsable API reference
+      generated from `public/openapi.json`, an interactive console against
+      a sandboxed environment, and SDK quickstarts in one place
+      ([#871](https://github.com/ezedike-evan/stellar-intel/issues/871))
+- [ ] **Multi-corridor oracle expansion (v2, with migration path)** — the
+      rate oracle covers more than its launch corridor without breaking
+      third-party contracts already reading v1
+      ([#872](https://github.com/ezedike-evan/stellar-intel/issues/872))
+- [x] **On-chain volume + savings oracle** — an independently verifiable
+      "fees saved" metric, published on-chain from the same outcome log
+      reputation scoring already uses, not asserted only by this app's
+      backend ([#826](https://github.com/ezedike-evan/stellar-intel/issues/826))
+- [x] **Versioning/deprecation policy + community contribution
+      infrastructure** — a written contract for what `API-Version` actually
+      guarantees, and a CONTRIBUTING.md that covers the multi-language
+      reality once the Rust/Python SDKs exist
+      ([#827](https://github.com/ezedike-evan/stellar-intel/issues/827))
+- [ ] **Fully decentralized architecture** — multisig-governed contracts,
+      community-maintained SDKs, on-chain as the source of truth rather
+      than this app's backend as a trust bottleneck
+      ([#875](https://github.com/ezedike-evan/stellar-intel/issues/875))
+
+**Parked — unscoped primitives.** Four of the seven "surviving 1000x"
+primitives scoped under the original Horizon-3 structure have no child issue
+above. Each is gated on something that does not exist yet, which is why no
+wave claimed them. Recorded here so the sequencing is not lost; placement is
+still open.
+
+- [ ] **Recurring intents / subscription remittance** — sign once, later
+      executions run without a fresh signature. Gated on wallet pre-auth
+      standards: Freighter exposes no pre-authorization primitive today, so
+      this cannot start until that lands upstream
+- [ ] **Settlement-guaranteed SLA** — gated on ~10k actuarial observations
+      before a guarantee can be priced; start with $100 caps. Reads the same
+      outcome log the reputation write path already produces
+- [ ] **Chained atomic execution** — on-ramp → swap → yield in one signature.
+      Deferred modules return as solver hops, not standalone tabs: a routing
+      concern inside the existing intent router, not new surface area
+- [ ] **Universal intent collapse** — one input, one signature, any outcome.
+      Ship the identity only after execution volume exists; it is a
+      positioning claim that needs volume behind it, so it sequences last
+      deliberately
+
+The remaining three are already covered above: canonical on-chain corridor
+rates by the multi-corridor oracle expansion plus the Soroban-native read
+path; the verifiable half of the credit layer by the on-chain volume/savings
+oracle (the credit product itself is Year 2+, gated on regulatory memo and
+capital); and the agent-native surface by the SDK and developer-portal work.
+
+**v6 release gate.** Mirrors the H3 success bar this wave was originally
+scoped under, before this document moved from a Horizon-based structure to
+the wave structure above.
+
+- [ ] Corridor rate oracle read by ≥ 1 third-party contract
+- [ ] Recurring remittance alpha live
+- [ ] SLA pilot running with cost caps
+- [ ] The "ripped out" test passes: if this app's backend disappeared
+      entirely, the on-chain data it publishes remains independently
+      readable and meaningful
+
+---
+
 ## Cross-cutting tracks
 
 These do not belong to a single wave — they run in parallel and every
@@ -521,6 +609,7 @@ wave advances them.
 **Docs** — the ten load-bearing doc files listed in
 [`maintainer.md § 3`](../maintainer.md) are updated alongside the code
 that changes their subject. A wave does not ship with out-of-date docs.
+Analytics documentation lives in [`docs/ANALYTICS.md`](ANALYTICS.md).
 
 **Observability** — every wave extends the metric surface. v1.3 seeds
 the logger + counters; v2.1 adds publisher metrics; v3 adds SLA
