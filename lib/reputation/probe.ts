@@ -14,10 +14,10 @@
 import { getLogger } from '@/lib/logger';
 import { resolveToml } from '@/lib/stellar/sep1';
 import { getCorridorById } from '@/lib/stellar/anchors';
-import { assertSep38Capable, getSep38Price } from '@/lib/stellar/sep38';
+import { assertSep38Capable, getSep38Price, getSep38Info } from '@/lib/stellar/sep38';
 import { DRIFT_THRESHOLD_PERCENT, isDrifted } from './thresholds';
 import { ANCHORS } from '@/constants/anchors';
-import type { ProbeFailureType } from '@/types/reputation';
+import type { ProbeFailureType, ProbeKind, ProbeLedgerRow } from '@/types/reputation';
 import type { Anchor } from '@/types';
 
 const logger = getLogger('reputation/probe');
@@ -630,4 +630,224 @@ export function quoteLatencyPercentiles(
     return sorted[Math.min(Math.max(idx, 0), sorted.length - 1)]!;
   };
   return { p50Ms: rank(50), p95Ms: rank(95), sampleCount: windowed.length };
+}
+
+// ─── Issuer-mismatch probe (Issue #D004) ───────────────────────────────────────
+//
+// Compares an anchor's stellar.toml advertised issuer for its registered asset
+// against the issuer its own live SEP-38 GET /info response returns for that
+// same asset. The two are usually set from the same config and never drift,
+// but if they ever do it means the anchor's live quote server is settling a
+// look-alike asset under a different issuer than the one publicly advertised
+// — a trust-critical signal distinct from routine unreachability, so it is
+// recorded as its own probe dimension rather than folded into `uptime`.
+
+/** Outcome of one issuer-mismatch check. */
+export interface IssuerCheckResult {
+  /** True when both the toml and the live SEP-38 /info issuer were resolved (whether or not they match). */
+  ok: boolean;
+  /** Issuer address from the anchor's stellar.toml CURRENCIES entry for its asset code; null if absent. */
+  advertisedIssuer: string | null;
+  /** Issuer address from the anchor's live SEP-38 /info assets list for the same asset code; null if absent. */
+  actualIssuer: string | null;
+  /** Set when `ok` is false — the reason the check could not complete. */
+  error?: string;
+}
+
+/** Injectable dependencies for the issuer-mismatch probe. */
+export interface IssuerMismatchDeps {
+  /** Resolves an anchor's advertised vs. actual issuer. Defaults to a real toml + SEP-38 /info fetch. */
+  checkIssuer?: (anchor: Anchor) => Promise<IssuerCheckResult>;
+  /** Monotonic-ish millisecond clock. Defaults to `Date.now`. */
+  now?: () => number;
+}
+
+async function defaultCheckIssuer(anchor: Anchor): Promise<IssuerCheckResult> {
+  const domain = anchor.serviceDomain ?? anchor.homeDomain;
+  const tomlResult = await resolveToml(domain);
+  if (!tomlResult.ok) {
+    return { ok: false, advertisedIssuer: null, actualIssuer: null, error: tomlResult.error };
+  }
+
+  const advertisedIssuer =
+    tomlResult.data.CURRENCIES.find((c) => c.code === anchor.assetCode)?.issuer ?? null;
+
+  let quoteServer: string;
+  try {
+    quoteServer = assertSep38Capable(tomlResult.data);
+  } catch (err) {
+    return {
+      ok: false,
+      advertisedIssuer,
+      actualIssuer: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+
+  try {
+    const info = await getSep38Info(quoteServer);
+    const prefix = `stellar:${anchor.assetCode}:`;
+    const match = info.assets.find((a) => a.asset.startsWith(prefix));
+    const actualIssuer = match ? match.asset.slice(prefix.length) || null : null;
+    return { ok: true, advertisedIssuer, actualIssuer };
+  } catch (err) {
+    return {
+      ok: false,
+      advertisedIssuer,
+      actualIssuer: null,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+function resolveIssuerMismatchDeps(deps?: IssuerMismatchDeps): Required<IssuerMismatchDeps> {
+  return {
+    checkIssuer: deps?.checkIssuer ?? defaultCheckIssuer,
+    now: deps?.now ?? Date.now,
+  };
+}
+
+/**
+ * Probe one anchor's issuer-mismatch check, recording exactly one sample.
+ * `reachable: true` means the check completed and the advertised and actual
+ * issuers matched; `reachable: false` covers both a genuine mismatch (a
+ * `mismatch` failure type, distinguishable from network failures) and a
+ * probe that could not complete (classified like the other probes).
+ */
+export async function probeIssuerMismatch(
+  anchor: Anchor,
+  store: ProbeSampleStore,
+  deps?: IssuerMismatchDeps
+): Promise<ProbeSample> {
+  const { checkIssuer, now } = resolveIssuerMismatchDeps(deps);
+  const domain = anchor.serviceDomain ?? anchor.homeDomain;
+  const start = now();
+
+  let result: IssuerCheckResult;
+  try {
+    result = await checkIssuer(anchor);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    logger.warn({ event: 'probe.issuer.error', domain, error }, 'issuer probe caught an exception');
+    result = { ok: false, advertisedIssuer: null, actualIssuer: null, error };
+  }
+
+  let reachable: boolean;
+  let error: string | undefined;
+  let failureType: ProbeFailureType | null = null;
+  if (!result.ok) {
+    reachable = false;
+    error = result.error ?? 'issuer check unavailable';
+    failureType = classifyFailure(error);
+  } else if (result.advertisedIssuer !== null && result.advertisedIssuer === result.actualIssuer) {
+    reachable = true;
+  } else {
+    reachable = false;
+    failureType = 'mismatch';
+    error = `issuer mismatch for ${anchor.assetCode}: advertised=${result.advertisedIssuer ?? 'none'} actual=${result.actualIssuer ?? 'none'}`;
+  }
+
+  const end = now();
+  const sample: ProbeSample = {
+    domain,
+    reachable,
+    latencyMs: Math.max(0, end - start),
+    at: end,
+    failureType,
+    ...(error !== undefined ? { error } : {}),
+  };
+  logger.info(
+    { event: 'probe.issuer.sample', domain, reachable, failureType, error },
+    'issuer-mismatch sample recorded'
+  );
+  store.record(sample);
+  return sample;
+}
+
+/**
+ * Runs the issuer-mismatch probe for every registered anchor, concurrently.
+ * Defaults to the registered fleet in `constants/anchors.ts`; a different
+ * anchor list may be injected for tests.
+ */
+export async function probeAllAnchorIssuers(
+  store: ProbeSampleStore,
+  deps?: IssuerMismatchDeps,
+  anchors: readonly Anchor[] = ANCHORS
+): Promise<ProbeSample[]> {
+  logger.info(
+    { event: 'probe.issuer.all.start', anchorCount: anchors.length },
+    'starting issuer-mismatch probe run'
+  );
+  const samples = await Promise.all(
+    anchors.map((anchor) => probeIssuerMismatch(anchor, store, deps))
+  );
+  const mismatched = samples.filter((s) => s.failureType === 'mismatch').length;
+  logger.info(
+    { event: 'probe.issuer.all.complete', total: samples.length, mismatched },
+    'issuer-mismatch probe run complete'
+  );
+  return samples;
+}
+
+// ─── Durable persistence adapter (Issue #D007) ─────────────────────────────────
+//
+// `ProbeSampleStore` (used by every probe function above) is the in-memory
+// shape probes write to during a single run; it has no `kind`, since a probe
+// runner only ever produces one kind of sample. This adapter fans each
+// `record()` call out to a durable `ReputationStore`'s `recordProbeSample`,
+// tagging every row with the `kind` it was constructed for, so a scheduled
+// runner can point a probe function straight at the durable health ledger
+// instead of accumulating in memory and being discarded when the process exits.
+
+/** The minimal slice of `ReputationStore` this adapter depends on. */
+export interface ProbeLedgerSink {
+  recordProbeSample(row: ProbeLedgerRow): Promise<void>;
+}
+
+/**
+ * Adapts a durable `ReputationStore` to the `ProbeSampleStore` interface any
+ * probe function accepts, tagging every recorded sample with a fixed `kind`.
+ * `record()` fires the write without awaiting it — probe functions call it
+ * synchronously — so callers that need durability guarantees should `await`
+ * on the returned promises via `recordAll`/`flush` semantics elsewhere, or
+ * simply await the probe run and then `await drain()`.
+ */
+export class DurableProbeStore implements ProbeSampleStore {
+  private readonly pending: Promise<void>[] = [];
+
+  constructor(
+    private readonly sink: ProbeLedgerSink,
+    private readonly kind: ProbeKind
+  ) {}
+
+  record(sample: ProbeSample): void {
+    const row: ProbeLedgerRow = {
+      domain: sample.domain,
+      kind: this.kind,
+      corridor: sample.corridor ?? null,
+      reachable: sample.reachable,
+      latencyMs: sample.latencyMs,
+      failureType: sample.failureType ?? null,
+      error: sample.error ?? null,
+      probedAt: new Date(sample.at).toISOString(),
+    };
+    this.pending.push(
+      this.sink.recordProbeSample(row).catch((err) => {
+        logger.error(
+          { event: 'probe.persist.error', domain: row.domain, kind: row.kind, err },
+          'failed to persist probe sample to the durable store'
+        );
+      })
+    );
+  }
+
+  /** In-memory samples are not tracked by this adapter — it exists purely to persist. */
+  samples(): ProbeSample[] {
+    return [];
+  }
+
+  /** Awaits every write triggered by `record()` so far. */
+  async drain(): Promise<void> {
+    await Promise.all(this.pending.splice(0, this.pending.length));
+  }
 }

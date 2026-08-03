@@ -38,35 +38,48 @@ export interface OutcomeLogRow {
   oracleTxHash: string | null;
 }
 
-// ─── Uptime / quote-latency probe ledger (Issue #D002 / #D005) ────────────────
+// ─── Uptime / quote-latency / issuer-mismatch probe ledger (Issue #D002 / #D005 / #D004) ─
 //
 // Probe samples recorded into the health ledger. An `uptime` row captures one
 // SEP-1 stellar.toml reachability check for an anchor; a `quote` row captures
 // one SEP-38 quote round-trip for an anchor+corridor, timed independently of
 // uptime so a slow-but-reachable anchor is distinguishable from a down one.
-// Both kinds carry a classified failure type so the dashboard can distinguish
-// DNS/TLS issues from plain HTTP errors or timeouts.
+// An `issuer-mismatch` row captures one comparison of an anchor's stellar.toml
+// advertised issuer against the issuer its live SEP-38 /info response actually
+// returns for the same asset — a look-alike issuer swap is a distinct,
+// higher-severity failure mode from ordinary unreachability, so it gets its
+// own kind rather than being folded into `uptime`.
+// All three kinds carry a classified failure type so the dashboard can
+// distinguish DNS/TLS issues, plain HTTP errors/timeouts, and semantic
+// mismatches from each other.
 
-export const PROBE_FAILURE_TYPES = ['dns', 'tls', 'http', 'timeout', 'unknown'] as const;
+export const PROBE_FAILURE_TYPES = [
+  'dns',
+  'tls',
+  'http',
+  'timeout',
+  'mismatch',
+  'unknown',
+] as const;
 export type ProbeFailureType = (typeof PROBE_FAILURE_TYPES)[number];
 
-export const PROBE_KINDS = ['uptime', 'quote'] as const;
+export const PROBE_KINDS = ['uptime', 'quote', 'issuer-mismatch'] as const;
 export type ProbeKind = (typeof PROBE_KINDS)[number];
 
 export interface ProbeLedgerRow {
   /** Anchor home domain that was probed. */
   domain: string;
-  /** Which check this row represents: stellar.toml reachability, or a SEP-38 quote round-trip. */
+  /** Which check this row represents: stellar.toml reachability, a SEP-38 quote round-trip, or an issuer-mismatch comparison. */
   kind: ProbeKind;
-  /** Corridor ID (e.g. 'usdc-ngn') for `quote` rows; null for `uptime` rows. */
+  /** Corridor ID (e.g. 'usdc-ngn') for `quote` rows; null for `uptime`/`issuer-mismatch` rows. */
   corridor: string | null;
-  /** True when the probe succeeded (toml resolved, or a quote was returned). */
+  /** True when the probe succeeded (toml resolved, a quote was returned, or the issuer matched). */
   reachable: boolean;
-  /** Round-trip time in milliseconds (0 when unreachable). */
+  /** Round-trip time in milliseconds (0 when unreachable, or for `issuer-mismatch` rows). */
   latencyMs: number;
   /** Classified failure reason; null when reachable. */
   failureType: ProbeFailureType | null;
-  /** Raw error message; null when reachable. */
+  /** Raw error message, or a mismatch description for `issuer-mismatch` rows; null when reachable. */
   error: string | null;
   /** ISO 8601 timestamp of the probe. */
   probedAt: string;

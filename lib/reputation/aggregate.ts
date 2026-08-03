@@ -1,4 +1,4 @@
-import type { OutcomeLogRow } from '@/types/reputation';
+import type { OutcomeLogRow, ProbeKind } from '@/types/reputation';
 
 export interface AggregateKey {
   anchorId: string;
@@ -425,7 +425,7 @@ export const PROBE_MAINNET_READINESS_DAYS = 90;
 
 export interface ProbeCoverageSample {
   probedAt: string;
-  kind: 'uptime' | 'quote';
+  kind: ProbeKind;
 }
 
 export interface CoverageGap {

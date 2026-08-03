@@ -12,12 +12,18 @@ import {
   probeQuoteLatency,
   probeAllAnchorQuotes,
   quoteLatencyPercentiles,
+  probeIssuerMismatch,
+  probeAllAnchorIssuers,
+  DurableProbeStore,
   type TomlProbeResult,
   type AnchorQuote,
   type RateProbeResult,
   type QuoteProbeResult,
+  type IssuerCheckResult,
+  type ProbeLedgerSink,
 } from '@/lib/reputation/probe';
 import type { Anchor } from '@/types';
+import type { ProbeLedgerRow } from '@/types/reputation';
 
 /** Deterministic clock: returns `start`, then advances by `step` each call. */
 function steppingClock(start = 1000, step = 120): () => number {
@@ -416,5 +422,139 @@ describe('quote-latency probe', () => {
   it('returns null when an anchor+corridor has no reachable quote samples', () => {
     const store = new InMemoryProbeStore();
     expect(quoteLatencyPercentiles('unknown.example', 'usdc-ngn', store)).toBeNull();
+  });
+});
+
+const issuerMatching = async (): Promise<IssuerCheckResult> => ({
+  ok: true,
+  advertisedIssuer: 'GADVERTISED',
+  actualIssuer: 'GADVERTISED',
+});
+const issuerMismatched = async (): Promise<IssuerCheckResult> => ({
+  ok: true,
+  advertisedIssuer: 'GADVERTISED',
+  actualIssuer: 'GIMPOSTOR',
+});
+const issuerUnreachable = async (): Promise<IssuerCheckResult> => ({
+  ok: false,
+  advertisedIssuer: null,
+  actualIssuer: null,
+  error: 'HTTP 503',
+});
+
+describe('issuer-mismatch probe', () => {
+  it('records reachable=true when the advertised and actual issuer match', async () => {
+    const store = new InMemoryProbeStore();
+    const sample = await probeIssuerMismatch(testAnchor(), store, { checkIssuer: issuerMatching });
+
+    expect(sample.reachable).toBe(true);
+    expect(sample.failureType ?? null).toBeNull();
+    expect(sample.error).toBeUndefined();
+  });
+
+  it('flags a mismatch with a distinct failure type and a descriptive error', async () => {
+    const store = new InMemoryProbeStore();
+    const anchor = testAnchor({ assetCode: 'USDC' });
+    const sample = await probeIssuerMismatch(anchor, store, { checkIssuer: issuerMismatched });
+
+    expect(sample.reachable).toBe(false);
+    expect(sample.failureType).toBe('mismatch');
+    expect(sample.error).toContain('GADVERTISED');
+    expect(sample.error).toContain('GIMPOSTOR');
+  });
+
+  it('classifies a genuine probe failure like the other probes, not as a mismatch', async () => {
+    const store = new InMemoryProbeStore();
+    const sample = await probeIssuerMismatch(testAnchor(), store, {
+      checkIssuer: issuerUnreachable,
+    });
+
+    expect(sample.reachable).toBe(false);
+    expect(sample.failureType).toBe('http');
+    expect(sample.error).toBe('HTTP 503');
+  });
+
+  it('records unreachable (does not throw) when the check helper throws', async () => {
+    const store = new InMemoryProbeStore();
+    const throwsCheck = async (): Promise<IssuerCheckResult> => {
+      throw new Error('ENOTFOUND');
+    };
+    const sample = await probeIssuerMismatch(testAnchor(), store, { checkIssuer: throwsCheck });
+
+    expect(sample.reachable).toBe(false);
+    expect(sample.error).toContain('ENOTFOUND');
+  });
+
+  it('probeAllAnchorIssuers checks every anchor concurrently', async () => {
+    const store = new InMemoryProbeStore();
+    const anchors = [
+      testAnchor({ id: 'a', homeDomain: 'a.example' }),
+      testAnchor({ id: 'b', homeDomain: 'b.example' }),
+    ];
+    const samples = await probeAllAnchorIssuers(store, { checkIssuer: issuerMatching }, anchors);
+
+    expect(samples).toHaveLength(2);
+    expect(store.samples('a.example')).toHaveLength(1);
+    expect(store.samples('b.example')).toHaveLength(1);
+  });
+});
+
+describe('DurableProbeStore', () => {
+  function fakeSink(): ProbeLedgerSink & { rows: ProbeLedgerRow[] } {
+    const rows: ProbeLedgerRow[] = [];
+    return {
+      rows,
+      async recordProbeSample(row) {
+        rows.push(row);
+      },
+    };
+  }
+
+  it('tags every recorded sample with its fixed kind and persists to the sink', async () => {
+    const sink = fakeSink();
+    const store = new DurableProbeStore(sink, 'uptime');
+
+    await probeAnchor('up.example', store, { fetchToml: ok, now: steppingClock(1000, 50) });
+    await store.drain();
+
+    expect(sink.rows).toHaveLength(1);
+    expect(sink.rows[0]).toMatchObject({
+      domain: 'up.example',
+      kind: 'uptime',
+      corridor: null,
+      reachable: true,
+    });
+  });
+
+  it('persists quote-latency samples under the quote kind, with the corridor preserved', async () => {
+    const sink = fakeSink();
+    const store = new DurableProbeStore(sink, 'quote');
+
+    await probeQuoteLatency(testAnchor(), 'usdc-ngn', store, { fetchQuote: quoteOk });
+    await store.drain();
+
+    expect(sink.rows[0]).toMatchObject({ kind: 'quote', corridor: 'usdc-ngn' });
+  });
+
+  it('persists issuer-mismatch samples under their own kind', async () => {
+    const sink = fakeSink();
+    const store = new DurableProbeStore(sink, 'issuer-mismatch');
+
+    await probeIssuerMismatch(testAnchor(), store, { checkIssuer: issuerMismatched });
+    await store.drain();
+
+    expect(sink.rows[0]).toMatchObject({ kind: 'issuer-mismatch', failureType: 'mismatch' });
+  });
+
+  it('does not throw when the sink fails to persist a sample', async () => {
+    const failingSink: ProbeLedgerSink = {
+      async recordProbeSample() {
+        throw new Error('db unavailable');
+      },
+    };
+    const store = new DurableProbeStore(failingSink, 'uptime');
+
+    await probeAnchor('up.example', store, { fetchToml: ok });
+    await expect(store.drain()).resolves.toBeUndefined();
   });
 });
