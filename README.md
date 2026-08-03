@@ -7,12 +7,15 @@
 [![Deployed on Vercel](https://img.shields.io/badge/deploy-vercel-000?style=flat-square&logo=vercel)](https://stellar-intel.vercel.app)
 [![Conventional Commits](https://img.shields.io/badge/commits-conventional-fe5196?style=flat-square&logo=conventionalcommits)](https://www.conventionalcommits.org)
 
-**Find the best rates on Stellar, in real time.**
+**The execution layer for stablecoin off-ramps on Stellar — with accountability
+built in.**
 
-Stellar Intel is a rate aggregator for the Stellar ecosystem. It compares
-off-ramp withdrawal rates, on-ramp deposit fees, yield protocol APYs, and
-swap routes across anchors and DeFi protocols — and lets you execute directly
-from the same interface.
+Stellar Intel compares live SEP-38 quotes across every integrated anchor,
+ranked by net landed value rather than headline rate, and lets you settle a
+non-custodial off-ramp as a signed intent from the same interface. Every
+quote, fill, failure, and settlement is written to a public reputation oracle,
+so you can see which anchors actually honor their quotes before you commit
+funds — not just which one is cheapest today.
 
 Built for users sending money home across Africa, Latin America, and Southeast
 Asia via Stellar anchors.
