@@ -55,11 +55,12 @@ describe('MCP server round-trip via subprocess (#137)', () => {
     await client?.close();
   });
 
-  it('lists both off-ramp tools', async () => {
+  it('lists all three tools', async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
     expect(names).toContain('intel.offramp.quote');
     expect(names).toContain('intel.offramp.prepare');
+    expect(names).toContain('intel.execute');
   });
 
   it('intel.offramp.quote returns a valid quote', async () => {
@@ -113,6 +114,42 @@ describe('MCP server round-trip via subprocess (#137)', () => {
     expect(structured.unsignedEnvelope.intentHash).toMatch(/^[0-9a-f]{64}$/);
     expect(typeof structured.unsignedTx).toBe('string');
     expect(structured.unsignedTx.length).toBeGreaterThan(0);
+  });
+
+  it('intel.execute rejects an invalid signature without crashing the server', async () => {
+    // No live Horizon submission here — that needs a funded mainnet account and
+    // isn't appropriate for CI. This exercises the tool's full request/response
+    // wiring through a real subprocess and asserts the pre-submission signature
+    // check rejects a bogus signature, matching the unit coverage in
+    // tests/mcp-offramp.spec.ts (#819).
+    const prepared = await client.callTool({
+      name: 'intel.offramp.prepare',
+      arguments: {
+        type: 'offramp',
+        sourceAsset: 'USDC',
+        destinationAsset: 'NGN',
+        amount: '10',
+        sender: 'GAIJ3VXNY7RPPLGVVCLGBK7NPHLL5ZRKATHETOA7M7UPZPAAHEGQQIY2',
+        recipient: 'recipient-123',
+      },
+    });
+    expect(prepared.isError).toBeFalsy();
+    const { unsignedEnvelope, unsignedTx } = prepared.structuredContent as {
+      unsignedEnvelope: { intent: unknown; intentHash: string };
+      unsignedTx: string;
+    };
+
+    const result = await client.callTool({
+      name: 'intel.execute',
+      arguments: {
+        unsignedEnvelope,
+        signature: Buffer.from('not-a-real-signature').toString('base64'),
+        signedTx: unsignedTx,
+      },
+    });
+    expect(result.isError).toBe(true);
+    const content = result.content as Array<{ type: string; text: string }>;
+    expect(content[0]?.text).toMatch(/^SIGNATURE_INVALID:/);
   });
 
   it('surfaces a tool error for an unknown corridor without crashing the server', async () => {

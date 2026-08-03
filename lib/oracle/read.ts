@@ -135,3 +135,132 @@ export async function listAnchors(config: OracleReadConfig = {}): Promise<string
   const result = await simulateRead('list_anchors', [], config);
   return Array.isArray(result) ? (result as string[]) : [];
 }
+
+// ── V2 entrypoints (multi-corridor expansion, issue #825) ────────────────
+
+export interface CorridorScoreV2 {
+  compositeBps: number;
+  fillRateBps: number;
+  slippageBps: number;
+  settleSecondsP50: number;
+  n: number;
+}
+
+/**
+ * `get_score_for_corridor_v2(anchor_id, corridor) -> (composite_bps, fill_rate_bps, slippage_bps, settle_seconds_p50, n)`.
+ * Falls back to v1 entrypoint if v2 is not available on the deployed contract.
+ */
+export async function getScoreForCorridorV2(
+  anchorId: string,
+  corridor: string,
+  config: OracleReadConfig = {}
+): Promise<CorridorScoreV2 | null> {
+  try {
+    const result = await simulateRead(
+      'get_score_for_corridor_v2',
+      [nativeToScVal(anchorId, { type: 'string' }), nativeToScVal(corridor, { type: 'string' })],
+      config
+    );
+    if (!Array.isArray(result) || result.length !== 5) return null;
+    const [compositeBps, fillRateBps, slippageBps, settleSecondsP50, n] = result as [
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      number,
+    ];
+    return {
+      compositeBps: Number(compositeBps),
+      fillRateBps: Number(fillRateBps),
+      slippageBps: Number(slippageBps),
+      settleSecondsP50: Number(settleSecondsP50),
+      n: Number(n),
+    };
+  } catch {
+    const v1 = await getScoreForCorridor(anchorId, corridor, config);
+    if (!v1) return null;
+    return {
+      compositeBps: v1.compositeBps,
+      fillRateBps: v1.fillRateBps,
+      slippageBps: 0,
+      settleSecondsP50: v1.settleSecondsP50,
+      n: v1.n,
+    };
+  }
+}
+
+/**
+ * `get_corridor_aggregate_v2(anchor_id, corridor) -> (total, successes, settle_seconds_sum)`.
+ * Falls back to v1 entrypoint if v2 is not available on the deployed contract.
+ */
+export async function getCorridorAggregateV2(
+  anchorId: string,
+  corridor: string,
+  config: OracleReadConfig = {}
+): Promise<CorridorAggregate | null> {
+  try {
+    const result = await simulateRead(
+      'get_corridor_aggregate_v2',
+      [nativeToScVal(anchorId, { type: 'string' }), nativeToScVal(corridor, { type: 'string' })],
+      config
+    );
+    if (!Array.isArray(result) || result.length !== 3) return null;
+    const [total, successes, settleSecondsSum] = result as [bigint, bigint, bigint];
+    return {
+      total: Number(total),
+      successes: Number(successes),
+      settleSecondsSum: Number(settleSecondsSum),
+    };
+  } catch {
+    return getCorridorAggregate(anchorId, corridor, config);
+  }
+}
+
+// ── Volume + savings oracle (issue #826) ────────────────────────────────
+
+export interface VolumeSavings {
+  volumeUsdc: number;
+  savingsUsdc: number;
+  settlementCount: number;
+  updatedAt: number;
+}
+
+/**
+ * `get_volume_savings(corridor) -> { volume_usdc, savings_usdc, settlement_count, updated_at } | null`.
+ * Reads the cumulative on-chain volume and estimated savings for a corridor.
+ * Returns `null` when no data has been published for that corridor yet.
+ */
+export async function getVolumeSavings(
+  corridor: string,
+  config: OracleReadConfig = {}
+): Promise<VolumeSavings | null> {
+  const result = await simulateRead(
+    'get_volume_savings',
+    [nativeToScVal(corridor, { type: 'string' })],
+    config
+  );
+  if (!result || typeof result !== 'object') return null;
+  const r = result as Record<string, unknown>;
+  if (r.volume_usdc === undefined && r.volumeUsdc === undefined) return null;
+  const volumeUsdc = Number(
+    (r as { volume_usdc?: bigint; volumeUsdc?: bigint }).volume_usdc ??
+      (r as { volume_usdc?: bigint; volumeUsdc?: bigint }).volumeUsdc ??
+      0n
+  );
+  const savingsUsdc = Number(
+    (r as { savings_usdc?: bigint; savingsUsdc?: bigint }).savings_usdc ??
+      (r as { savings_usdc?: bigint; savingsUsdc?: bigint }).savingsUsdc ??
+      0n
+  );
+  const settlementCount = Number(
+    (r as { settlement_count?: number; settlementCount?: number }).settlement_count ??
+      (r as { settlement_count?: number; settlementCount?: number }).settlementCount ??
+      0
+  );
+  const updatedAt = Number(
+    (r as { updated_at?: bigint; updatedAt?: bigint }).updated_at ??
+      (r as { updated_at?: bigint; updatedAt?: bigint }).updatedAt ??
+      0n
+  );
+  return { volumeUsdc, savingsUsdc, settlementCount, updatedAt };
+}

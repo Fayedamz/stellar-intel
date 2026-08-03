@@ -13,7 +13,10 @@ import type {
   AnchorRate,
   EvaluatedQuote,
   Intent,
+  MultiAnchorPlan,
+  MultiSolverResult,
   Plan,
+  PlanLeg,
   RateComparison,
   SolverResult,
 } from '@/types';
@@ -190,10 +193,10 @@ export function computeRoutingScore(
   reputationComposite: number = 1.0,
   weights = DEFAULT_SCORING_WEIGHTS
 ): number {
-  const sRate = maxRate > 0 ? rate / maxRate : 0;
+  const sRate = maxRate > 0 ? Math.max(0, rate / maxRate) : 0;
   const sReputation = Math.max(0, Math.min(1.0, reputationComposite));
   const sReliability = Math.max(0, Math.min(1.0, reliability));
-  const sLatency = Math.max(0, 1 - latencyMs / NORM_LATENCY_MS);
+  const sLatency = Math.max(0, Math.min(1.0, 1 - latencyMs / NORM_LATENCY_MS));
 
   const wRate = weights.rate ?? 0;
   const wReputation = weights.reputation ?? 0;
@@ -214,10 +217,9 @@ export function computeRoutingScore(
  * and deadline constraints. Returns a typed discriminated-union result.
  *
  * Selection is gated by `strategy` (defaults to the ROUTING_STRATEGY flag):
- * under `first-match` the first eligible quote wins and scoring is skipped
- * entirely; under `scored` it scores quotes on rate, reliability, latency, and
+ * under `scored` it scores quotes on rate, reliability, latency, and
  * reputation when metrics are supplied, falling back to the highest buy_amount
- * (rate) when they are not.
+ * (rate) when they are not; under `first-match` the first eligible quote wins.
  */
 export function solveSingleAnchor(
   intent: Intent,
@@ -288,30 +290,31 @@ export function solveSingleAnchor(
   let bestQuote = validQuotes[0]!;
 
   if (strategy === 'first-match') {
-    // Flag is off: keep the cheap deterministic path, ignore any scoring inputs.
+    // Explicit opt-in to legacy first-match behavior
   } else if (scoring && scoring.anchorMetrics) {
     const weights = { ...DEFAULT_SCORING_WEIGHTS, ...scoring.weights };
 
     // Find the max buy amount among valid quotes for relative rate normalization
-    let maxBuyAmount = 0;
+    let maxBuyAmountBig = 0n;
     for (const q of validQuotes) {
-      const amt = Number(q.buy_amount);
-      if (amt > maxBuyAmount) {
-        maxBuyAmount = amt;
+      const amt = parseDecimal(q.buy_amount);
+      if (amt > maxBuyAmountBig) {
+        maxBuyAmountBig = amt;
       }
     }
+    const maxRate = Number(maxBuyAmountBig);
 
     let highestScore = -1;
     for (const quote of validQuotes) {
       const metrics = scoring.anchorMetrics[quote.anchorId];
-      const rate = Number(quote.buy_amount);
+      const rate = Number(parseDecimal(quote.buy_amount));
       const reliability = metrics?.reliability ?? 1.0;
       const latencyMs = metrics?.latencyMs ?? 500;
       const reputationComposite = metrics?.reputationComposite ?? 1.0;
 
       const score = computeRoutingScore(
         rate,
-        maxBuyAmount,
+        maxRate,
         reliability,
         latencyMs,
         reputationComposite,
@@ -321,10 +324,15 @@ export function solveSingleAnchor(
       if (score > highestScore) {
         highestScore = score;
         bestQuote = quote;
+      } else if (Math.abs(score - highestScore) < 1e-9) {
+        // Break ties by preferring higher buy_amount (better rate)
+        if (compareDecimals(quote.buy_amount, bestQuote.buy_amount) > 0) {
+          bestQuote = quote;
+        }
       }
     }
   } else {
-    // Fall back to pure rate solver
+    // Fall back to pure rate solver (highest buy_amount)
     bestQuote = validQuotes.reduce((best, current) =>
       compareDecimals(current.buy_amount, best.buy_amount) > 0 ? current : best
     );
@@ -372,6 +380,134 @@ export function throwIfNoRoute(result: SolverResult): Plan {
   if (result.ok) return result.plan;
   const details = 'details' in result ? ` (${result.details})` : '';
   throw new NoEligibleRouteError(result.error, `${result.error}${details}`);
+}
+
+// ─── solveMultiAnchor (issue #800) ─────────────────────────────────────────────
+
+/** Renders a 7-dp-scaled BigInt back to a trimmed decimal string. */
+function formatDecimal(scaled: bigint): string {
+  const negative = scaled < 0n;
+  const digits = (negative ? -scaled : scaled).toString().padStart(8, '0');
+  const intPart = digits.slice(0, -7);
+  const fracPart = digits.slice(-7).replace(/0+$/, '');
+  return `${negative ? '-' : ''}${intPart}${fracPart ? `.${fracPart}` : ''}`;
+}
+
+export interface MultiAnchorOptions {
+  /** Cap on the number of anchors the order may be split across. */
+  maxAnchors?: number;
+}
+
+/**
+ * Splits an order across multiple anchors, best price first, so a large order
+ * that no single anchor can fill cheaply is routed as tranches. Each anchor
+ * absorbs up to the size its firm quote covers (`sell_amount`); the strategy
+ * walks the price-ranked quotes, filling the remaining amount until the order is
+ * satisfied. The resulting legs are meant to execute as ONE atomic multi-op
+ * Stellar transaction (see `lib/router/multi-op.ts`), so either every leg
+ * settles or none do — a partial fill can never strand funds at one anchor.
+ *
+ * Returns a typed error when the combined liquidity can't fill the order or the
+ * aggregate delivered amount would miss the intent floor.
+ */
+export function solveMultiAnchor(
+  intent: Intent,
+  evaluatedQuotes: EvaluatedQuote[],
+  options: MultiAnchorOptions = {}
+): MultiSolverResult {
+  if (isDeadlineExpired(intent.deadline)) {
+    return {
+      ok: false,
+      error: 'all_quotes_expired',
+      details: `Intent deadline ${intent.deadline} has already passed`,
+    };
+  }
+
+  const live = evaluatedQuotes.filter((q) => !isQuoteExpired(q.expires_at));
+  if (live.length === 0) {
+    if (evaluatedQuotes.length === 0) return { ok: false, error: 'no_eligible_route' };
+    return {
+      ok: false,
+      error: 'all_quotes_expired',
+      details: `All ${evaluatedQuotes.length} quote(s) have expired`,
+    };
+  }
+
+  const maxAnchors = Math.max(
+    1,
+    options.maxAnchors ?? intent.preferences?.maxAnchors ?? live.length
+  );
+
+  // Rank by price (buy per unit sold) descending — best rate for the user first.
+  const ranked = [...live].sort((a, b) => compareDecimals(b.price, a.price));
+
+  const target = parseDecimal(intent.sellAmount);
+  let remaining = target;
+  const legs: PlanLeg[] = [];
+
+  for (const quote of ranked) {
+    if (remaining <= 0n || legs.length >= maxAnchors) break;
+
+    const capacity = parseDecimal(quote.sell_amount);
+    if (capacity <= 0n) continue;
+
+    const alloc = capacity < remaining ? capacity : remaining;
+    const price = parseDecimal(quote.price);
+    // buy = sell * price; both are 7-dp scaled, so divide out one scale factor.
+    const netScaled = (alloc * price) / DECIMAL_SCALE;
+    // Fee is prorated by the fraction of the quote's size this leg consumes.
+    const legFee = (parseDecimal(quote.fee.total) * alloc) / capacity;
+
+    legs.push({
+      anchorId: quote.anchorId,
+      anchorName: quote.anchorName,
+      quoteId: quote.id,
+      sellAmount: formatDecimal(alloc),
+      netAmount: formatDecimal(netScaled),
+      fee: formatDecimal(legFee),
+      price: quote.price,
+    });
+
+    remaining -= alloc;
+  }
+
+  if (remaining > 0n) {
+    return {
+      ok: false,
+      error: 'insufficient_liquidity',
+      details: `Combined anchor liquidity covers ${formatDecimal(target - remaining)} of ${intent.sellAmount} ${intent.sellAsset.code} (max ${maxAnchors} anchors)`,
+    };
+  }
+
+  const totalSellScaled = legs.reduce((sum, leg) => sum + parseDecimal(leg.sellAmount), 0n);
+  const netScaledTotal = legs.reduce((sum, leg) => sum + parseDecimal(leg.netAmount), 0n);
+
+  if (netScaledTotal < parseDecimal(intent.minReceive)) {
+    return {
+      ok: false,
+      error: 'floor_not_met',
+      details: `Aggregate delivered ${formatDecimal(netScaledTotal)} < minimum receive ${intent.minReceive}`,
+    };
+  }
+
+  const plan: MultiAnchorPlan = {
+    type: 'multi_anchor',
+    legs,
+    totalSell: formatDecimal(totalSellScaled),
+    netAmount: formatDecimal(netScaledTotal),
+  };
+
+  log.info(
+    {
+      corridor: intent.corridor,
+      anchors: legs.length,
+      totalSell: plan.totalSell,
+      netAmount: plan.netAmount,
+    },
+    'multi-anchor routing decision'
+  );
+
+  return { ok: true, plan };
 }
 
 // ─── solveWithFallback ────────────────────────────────────────────────────────
@@ -451,4 +587,138 @@ export async function solveWithFallback(
   }
 
   return { winner: null, comparison: null, attempts };
+}
+
+// ─── Hop chain abstraction (Issue #815) ──────────────────────────────────────
+//
+// Primitive II: on-ramp → swap → yield in one signature.
+// Each module type implements HopExecutor; solveChain validates asset continuity
+// and delegates planning to registered executors — no connector implementations
+// live here.
+
+export type HopKind = 'on-ramp' | 'swap' | 'yield';
+
+/** Minimal asset identifier used for hop-to-hop continuity checks. */
+export interface HopAssetRef {
+  code: string;
+  issuer?: string;
+}
+
+/** One composable step in a chained execution. */
+export interface Hop {
+  kind: HopKind;
+  /** Asset this hop consumes. */
+  sellAsset: HopAssetRef;
+  /** Asset this hop produces. */
+  buyAsset: HopAssetRef;
+  /** Minimum acceptable output from this hop. */
+  minReceive: string;
+}
+
+/** A hop resolved to a concrete executor with estimated amounts. */
+export interface PlannedHop {
+  hop: Hop;
+  /** Stable executor id: anchorId for on-ramp, poolId for swap, protocolId for yield. */
+  executorId: string;
+  /** Estimated net output (after fees) from this hop. */
+  estimatedOut: string;
+  fee: string;
+}
+
+/** Execution plan produced when every hop in a chain is solved. */
+export interface ChainedPlan {
+  type: 'chained';
+  hops: PlannedHop[];
+  /** Estimated net output of the final hop — what the user actually receives. */
+  totalEstimatedOut: string;
+}
+
+/** Discriminated-union result of attempting to solve a hop chain. */
+export type ChainSolverResult =
+  | { ok: true; plan: ChainedPlan }
+  | { ok: false; error: 'empty_chain' }
+  | { ok: false; error: 'asset_mismatch'; hopIndex: number; details: string }
+  | { ok: false; error: 'no_route_for_hop'; hopIndex: number; details: string };
+
+/**
+ * Contract every hop connector (on-ramp, swap, yield) must implement.
+ * The solver calls `planHop` for each hop in the chain; returning `null`
+ * signals that this executor cannot serve the hop and the solver tries the next.
+ */
+export interface HopExecutor {
+  readonly kind: HopKind;
+  readonly executorId: string;
+  planHop(hop: Hop): Promise<PlannedHop | null>;
+}
+
+function assetsMatch(a: HopAssetRef, b: HopAssetRef): boolean {
+  if (a.code.toUpperCase() !== b.code.toUpperCase()) return false;
+  if (a.issuer && b.issuer && a.issuer !== b.issuer) return false;
+  return true;
+}
+
+function assetLabel(a: HopAssetRef): string {
+  return a.issuer ? `${a.code}:${a.issuer.slice(0, 8)}` : a.code;
+}
+
+function validateHopChain(hops: Hop[]): ChainSolverResult | null {
+  if (hops.length === 0) return { ok: false, error: 'empty_chain' };
+  for (let i = 1; i < hops.length; i++) {
+    const prev = hops[i - 1]!;
+    const curr = hops[i]!;
+    if (!assetsMatch(prev.buyAsset, curr.sellAsset)) {
+      return {
+        ok: false,
+        error: 'asset_mismatch',
+        hopIndex: i,
+        details: `hop[${i - 1}] (${prev.kind}) outputs ${assetLabel(prev.buyAsset)} but hop[${i}] (${curr.kind}) expects ${assetLabel(curr.sellAsset)}`,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Plans a chain of hops against a registry of executors.
+ *
+ * Asset continuity is validated before any executor is called. Hops are planned
+ * left-to-right; the first executor of the matching kind that returns a non-null
+ * plan wins. Returns a typed error if any hop cannot be routed.
+ */
+export async function solveChain(
+  hops: Hop[],
+  executors: HopExecutor[]
+): Promise<ChainSolverResult> {
+  const chainError = validateHopChain(hops);
+  if (chainError) return chainError;
+
+  const plannedHops: PlannedHop[] = [];
+
+  for (let i = 0; i < hops.length; i++) {
+    const hop = hops[i]!;
+    const eligible = executors.filter((e) => e.kind === hop.kind);
+
+    let planned: PlannedHop | null = null;
+    for (const executor of eligible) {
+      planned = await executor.planHop(hop);
+      if (planned) break;
+    }
+
+    if (!planned) {
+      return {
+        ok: false,
+        error: 'no_route_for_hop',
+        hopIndex: i,
+        details: `no executor for hop[${i}] (${hop.kind}: ${assetLabel(hop.sellAsset)} -> ${assetLabel(hop.buyAsset)})`,
+      };
+    }
+
+    plannedHops.push(planned);
+  }
+
+  const lastHop = plannedHops[plannedHops.length - 1]!;
+  return {
+    ok: true,
+    plan: { type: 'chained', hops: plannedHops, totalEstimatedOut: lastHop.estimatedOut },
+  };
 }

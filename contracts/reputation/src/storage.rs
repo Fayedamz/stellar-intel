@@ -40,6 +40,10 @@ pub enum DataKey {
     // ── Instance tier ──────────────────────────────────────────────────────
     /// The contract administrator.
     Admin,
+    /// Candidate address proposed by the current admin during a two-step
+    /// transfer. Cleared once the candidate calls `accept_admin` or the
+    /// current admin calls `cancel_admin_proposal`.
+    PendingAdmin,
     /// Ordered list of registered anchor ids (admin list-view only).
     Anchors,
     /// Ordered list of publisher addresses (admin list-view only).
@@ -60,4 +64,11 @@ pub enum DataKey {
     Corridor(String, String),
     /// Rolling aggregate for an (anchor, corridor) pair: `(total, successes, settle_seconds_sum)`.
     CorridorAggregate(String, String),
+    /// Latest published block-level rate for a corridor (issue #810).
+    CorridorRate(String),
+    /// V2 corridor metrics: `(fill_rate_bps, slippage_bps, composite_bps, settle_seconds_p50, n)`.
+    /// Supports multi-corridor expansion without breaking v1 readers.
+    CorridorV2(String, String),
+    /// Cumulative volume + savings for a corridor (issue #826).
+    VolumeSavings(String),
 }
