@@ -39,7 +39,7 @@ const HOW_IT_WORKS_STEPS = [
   {
     step: '03',
     title: 'Execute in one click',
-    body: 'Sign once and settle directly on Stellar with Freighter — non-custodial.',
+    body: 'Sign a single intent in Freighter and settle directly on Stellar — non-custodial.',
   },
 ];
 
