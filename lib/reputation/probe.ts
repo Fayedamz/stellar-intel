@@ -12,13 +12,13 @@
  */
 
 import { getLogger } from '@/lib/logger';
-import { resolveToml } from '@/lib/stellar/sep1';
+import { resolveToml, validateTomlIntegrity, type TomlResult } from '@/lib/stellar/sep1';
 import { getCorridorById } from '@/lib/stellar/anchors';
 import { assertSep38Capable, getSep38Price, getSep38Info } from '@/lib/stellar/sep38';
 import { DRIFT_THRESHOLD_PERCENT, isDrifted } from './thresholds';
 import { ANCHORS } from '@/constants/anchors';
 import type { ProbeFailureType, ProbeKind, ProbeLedgerRow } from '@/types/reputation';
-import type { Anchor } from '@/types';
+import type { Anchor, Sep1TomlData } from '@/types';
 
 const logger = getLogger('reputation/probe');
 
@@ -785,6 +785,127 @@ export async function probeAllAnchorIssuers(
   logger.info(
     { event: 'probe.issuer.all.complete', total: samples.length, mismatched },
     'issuer-mismatch probe run complete'
+  );
+  return samples;
+}
+
+// ─── Toml-integrity probe (Issue #D003) ────────────────────────────────────────
+//
+// Validates each anchor's stellar.toml against the SEP-1 required-field
+// expectations (see `validateTomlIntegrity` in `lib/stellar/sep1`), flagging
+// a missing SIGNING_KEY, a malformed TRANSFER_SERVER*/URL, or drift vs. the
+// last known-good snapshot — none of which uptime alone would catch, since a
+// broken toml doesn't take the domain offline.
+
+/** Injectable dependencies for the toml-integrity probe. */
+export interface TomlIntegrityDeps {
+  /** Resolves an anchor's stellar.toml. Defaults to `resolveToml` from lib/stellar/sep1. */
+  fetchToml?: (domain: string) => Promise<TomlResult>;
+  /** Looks up the last known-good snapshot for a domain. Defaults to an in-memory, per-process map. */
+  getLastKnownGood?: (domain: string) => Sep1TomlData | null;
+  /** Records a validated-clean snapshot as the new last known-good. Defaults to the same in-memory map. */
+  recordLastKnownGood?: (domain: string, toml: Sep1TomlData) => void;
+  /** Monotonic-ish millisecond clock. Defaults to `Date.now`. */
+  now?: () => number;
+}
+
+const lastKnownGoodToml = new Map<string, Sep1TomlData>();
+
+function defaultGetLastKnownGood(domain: string): Sep1TomlData | null {
+  return lastKnownGoodToml.get(domain) ?? null;
+}
+
+function defaultRecordLastKnownGood(domain: string, toml: Sep1TomlData): void {
+  lastKnownGoodToml.set(domain, toml);
+}
+
+function resolveTomlIntegrityDeps(deps?: TomlIntegrityDeps): Required<TomlIntegrityDeps> {
+  return {
+    fetchToml: deps?.fetchToml ?? resolveToml,
+    getLastKnownGood: deps?.getLastKnownGood ?? defaultGetLastKnownGood,
+    recordLastKnownGood: deps?.recordLastKnownGood ?? defaultRecordLastKnownGood,
+    now: deps?.now ?? Date.now,
+  };
+}
+
+/**
+ * Probe one anchor's toml-integrity check, recording exactly one sample.
+ * `reachable: true` means the toml resolved and validated clean — the
+ * snapshot is then recorded as the new last known-good. `reachable: false`
+ * covers both a validation failure (an `integrity` failure type, distinguishable
+ * from network failures) and a probe that could not complete (classified like
+ * the other probes).
+ */
+export async function probeTomlIntegrity(
+  domain: string,
+  store: ProbeSampleStore,
+  deps?: TomlIntegrityDeps
+): Promise<ProbeSample> {
+  const { fetchToml, getLastKnownGood, recordLastKnownGood, now } = resolveTomlIntegrityDeps(deps);
+  const start = now();
+
+  let reachable: boolean;
+  let error: string | undefined;
+  let failureType: ProbeFailureType | null = null;
+
+  const result = await fetchToml(domain);
+  if (!result.ok) {
+    reachable = false;
+    error = result.error;
+    failureType = classifyFailure(error);
+  } else {
+    const previous = getLastKnownGood(domain);
+    const validation = validateTomlIntegrity(result.data, previous);
+    if (validation.valid) {
+      reachable = true;
+      recordLastKnownGood(domain, result.data);
+    } else {
+      reachable = false;
+      failureType = 'integrity';
+      error = validation.issues.map((issue) => `${issue.field}: ${issue.reason}`).join('; ');
+    }
+  }
+
+  const end = now();
+  const sample: ProbeSample = {
+    domain,
+    reachable,
+    latencyMs: Math.max(0, end - start),
+    at: end,
+    failureType,
+    ...(error !== undefined ? { error } : {}),
+  };
+  logger.info(
+    { event: 'probe.integrity.sample', domain, reachable, failureType, error },
+    'toml-integrity sample recorded'
+  );
+  store.record(sample);
+  return sample;
+}
+
+/**
+ * Runs the toml-integrity probe for every registered anchor, concurrently.
+ * Defaults to the registered fleet in `constants/anchors.ts`; a different
+ * anchor list may be injected for tests.
+ */
+export async function probeAllAnchorIntegrity(
+  store: ProbeSampleStore,
+  deps?: TomlIntegrityDeps,
+  anchors: readonly Anchor[] = ANCHORS
+): Promise<ProbeSample[]> {
+  logger.info(
+    { event: 'probe.integrity.all.start', anchorCount: anchors.length },
+    'starting toml-integrity probe run'
+  );
+  const samples = await Promise.all(
+    anchors.map((anchor) =>
+      probeTomlIntegrity(anchor.serviceDomain ?? anchor.homeDomain, store, deps)
+    )
+  );
+  const failed = samples.filter((s) => s.failureType === 'integrity').length;
+  logger.info(
+    { event: 'probe.integrity.all.complete', total: samples.length, failed },
+    'toml-integrity probe run complete'
   );
   return samples;
 }

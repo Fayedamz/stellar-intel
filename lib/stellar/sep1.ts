@@ -156,6 +156,78 @@ export function resolveAnchorSupportHref(toml: Sep1TomlData): string | null {
   return null;
 }
 
+// ─── Toml integrity validation (Issue #D003) ───────────────────────────────────
+//
+// An anchor can silently break its stellar.toml — a malformed field, a missing
+// required key, a rotated signing key — without ever going offline, so uptime
+// alone never catches it. This validates the already-parsed `Sep1TomlData`
+// against the SEP-1 required-field expectations, and optionally against the
+// last known-good snapshot to flag drift (e.g. a changed SIGNING_KEY) without
+// treating drift as fatal — a legitimate key rotation looks identical to a
+// compromised one at this layer, so it's flagged, not silently accepted or
+// auto-rejected.
+
+/** One field-level integrity problem found in a stellar.toml. */
+export interface TomlIntegrityIssue {
+  field: string;
+  reason: string;
+}
+
+/** Outcome of validating one stellar.toml snapshot. */
+export interface TomlIntegrityResult {
+  valid: boolean;
+  issues: TomlIntegrityIssue[];
+}
+
+function isValidHttpsUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validates a resolved `Sep1TomlData` against the SEP-1 required-field
+ * expectations: `SIGNING_KEY` must be present, and `TRANSFER_SERVER` /
+ * `TRANSFER_SERVER_SEP0024` (when advertised) must be well-formed HTTPS URLs.
+ * When `previous` (the last known-good snapshot for the same domain) is
+ * supplied, a changed `SIGNING_KEY` is also flagged as drift.
+ */
+export function validateTomlIntegrity(
+  toml: Sep1TomlData,
+  previous?: Sep1TomlData | null
+): TomlIntegrityResult {
+  const issues: TomlIntegrityIssue[] = [];
+
+  if (!toml.SIGNING_KEY) {
+    issues.push({ field: 'SIGNING_KEY', reason: 'missing SIGNING_KEY' });
+  }
+
+  if (toml.TRANSFER_SERVER && !isValidHttpsUrl(toml.TRANSFER_SERVER)) {
+    issues.push({
+      field: 'TRANSFER_SERVER',
+      reason: `malformed URL: "${toml.TRANSFER_SERVER}"`,
+    });
+  }
+
+  if (toml.TRANSFER_SERVER_SEP0024 && !isValidHttpsUrl(toml.TRANSFER_SERVER_SEP0024)) {
+    issues.push({
+      field: 'TRANSFER_SERVER_SEP0024',
+      reason: `malformed URL: "${toml.TRANSFER_SERVER_SEP0024}"`,
+    });
+  }
+
+  if (previous?.SIGNING_KEY && toml.SIGNING_KEY && previous.SIGNING_KEY !== toml.SIGNING_KEY) {
+    issues.push({
+      field: 'SIGNING_KEY',
+      reason: `signing key changed: was "${previous.SIGNING_KEY}", now "${toml.SIGNING_KEY}"`,
+    });
+  }
+
+  return { valid: issues.length === 0, issues };
+}
+
 /**
  * Resolves an anchor stellar.toml file via SEP-1.
  *

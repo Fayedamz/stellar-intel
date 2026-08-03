@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   InMemoryProbeStore,
   probeAnchor,
@@ -14,6 +14,8 @@ import {
   quoteLatencyPercentiles,
   probeIssuerMismatch,
   probeAllAnchorIssuers,
+  probeTomlIntegrity,
+  probeAllAnchorIntegrity,
   DurableProbeStore,
   type TomlProbeResult,
   type AnchorQuote,
@@ -22,8 +24,9 @@ import {
   type IssuerCheckResult,
   type ProbeLedgerSink,
 } from '@/lib/reputation/probe';
-import type { Anchor } from '@/types';
+import type { Anchor, Sep1TomlData } from '@/types';
 import type { ProbeLedgerRow } from '@/types/reputation';
+import type { TomlResult } from '@/lib/stellar/sep1';
 
 /** Deterministic clock: returns `start`, then advances by `step` each call. */
 function steppingClock(start = 1000, step = 120): () => number {
@@ -499,6 +502,104 @@ describe('issuer-mismatch probe', () => {
   });
 });
 
+function tomlData(over: Partial<Sep1TomlData> = {}): Sep1TomlData {
+  return {
+    domain: 'anchor.example',
+    TRANSFER_SERVER_SEP0024: 'https://anchor.example/sep24',
+    TRANSFER_SERVER: null,
+    DIRECT_PAYMENT_SERVER: null,
+    ANCHOR_QUOTE_SERVER: null,
+    WEB_AUTH_ENDPOINT: null,
+    SIGNING_KEY: 'GABCDEF',
+    NETWORK_PASSPHRASE: null,
+    ORG_URL: null,
+    ORG_SUPPORT_EMAIL: null,
+    ORG_SUPPORT_URL: null,
+    CURRENCIES: [{ code: 'USDC', issuer: 'GISSUER' }],
+    capabilities: { sep10: false, sep24: true, sep38: false, sep12: true },
+    ...over,
+  };
+}
+
+const tomlValid = async (): Promise<TomlResult> => ({ ok: true, data: tomlData() });
+const tomlUnreachable = async (): Promise<TomlResult> => ({ ok: false, error: 'HTTP 503' });
+
+describe('toml-integrity probe', () => {
+  it('records reachable=true and remembers the snapshot when the toml validates clean', async () => {
+    const store = new InMemoryProbeStore();
+    const remembered: Sep1TomlData[] = [];
+    const sample = await probeTomlIntegrity('anchor.example', store, {
+      fetchToml: tomlValid,
+      getLastKnownGood: () => null,
+      recordLastKnownGood: (_domain, toml) => remembered.push(toml),
+    });
+
+    expect(sample.reachable).toBe(true);
+    expect(sample.failureType ?? null).toBeNull();
+    expect(remembered).toHaveLength(1);
+  });
+
+  it('flags a missing SIGNING_KEY with the integrity failure type', async () => {
+    const store = new InMemoryProbeStore();
+    const fetchToml = async (): Promise<TomlResult> => ({
+      ok: true,
+      data: tomlData({ SIGNING_KEY: null }),
+    });
+    const sample = await probeTomlIntegrity('anchor.example', store, {
+      fetchToml,
+      getLastKnownGood: () => null,
+    });
+
+    expect(sample.reachable).toBe(false);
+    expect(sample.failureType).toBe('integrity');
+    expect(sample.error).toContain('SIGNING_KEY');
+  });
+
+  it('does not overwrite the last known-good snapshot on a failed validation', async () => {
+    const store = new InMemoryProbeStore();
+    const recordLastKnownGood = vi.fn();
+    const fetchToml = async (): Promise<TomlResult> => ({
+      ok: true,
+      data: tomlData({ SIGNING_KEY: null }),
+    });
+    await probeTomlIntegrity('anchor.example', store, {
+      fetchToml,
+      getLastKnownGood: () => null,
+      recordLastKnownGood,
+    });
+
+    expect(recordLastKnownGood).not.toHaveBeenCalled();
+  });
+
+  it('classifies a genuine probe failure like the other probes, not as integrity', async () => {
+    const store = new InMemoryProbeStore();
+    const sample = await probeTomlIntegrity('anchor.example', store, {
+      fetchToml: tomlUnreachable,
+    });
+
+    expect(sample.reachable).toBe(false);
+    expect(sample.failureType).toBe('http');
+    expect(sample.error).toBe('HTTP 503');
+  });
+
+  it('probeAllAnchorIntegrity checks every anchor concurrently', async () => {
+    const store = new InMemoryProbeStore();
+    const anchors = [
+      testAnchor({ id: 'a', homeDomain: 'a.example' }),
+      testAnchor({ id: 'b', homeDomain: 'b.example' }),
+    ];
+    const samples = await probeAllAnchorIntegrity(
+      store,
+      { fetchToml: tomlValid, getLastKnownGood: () => null },
+      anchors
+    );
+
+    expect(samples).toHaveLength(2);
+    expect(store.samples('a.example')).toHaveLength(1);
+    expect(store.samples('b.example')).toHaveLength(1);
+  });
+});
+
 describe('DurableProbeStore', () => {
   function fakeSink(): ProbeLedgerSink & { rows: ProbeLedgerRow[] } {
     const rows: ProbeLedgerRow[] = [];
@@ -544,6 +645,20 @@ describe('DurableProbeStore', () => {
     await store.drain();
 
     expect(sink.rows[0]).toMatchObject({ kind: 'issuer-mismatch', failureType: 'mismatch' });
+  });
+
+  it('persists toml-integrity samples under their own kind', async () => {
+    const sink = fakeSink();
+    const store = new DurableProbeStore(sink, 'toml-integrity');
+    const fetchToml = async (): Promise<TomlResult> => ({
+      ok: true,
+      data: tomlData({ SIGNING_KEY: null }),
+    });
+
+    await probeTomlIntegrity('anchor.example', store, { fetchToml, getLastKnownGood: () => null });
+    await store.drain();
+
+    expect(sink.rows[0]).toMatchObject({ kind: 'toml-integrity', failureType: 'integrity' });
   });
 
   it('does not throw when the sink fails to persist a sample', async () => {

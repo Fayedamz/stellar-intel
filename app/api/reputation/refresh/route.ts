@@ -7,6 +7,7 @@ import {
   probeAllAnchors,
   probeAllAnchorQuotes,
   probeAllAnchorIssuers,
+  probeAllAnchorIntegrity,
 } from '@/lib/reputation/probe';
 
 const LOCK_KEY = 'reputation-refresh';
@@ -18,9 +19,10 @@ interface ProbeSweepCounts {
   uptime: number;
   quote: number;
   issuerMismatch: number;
+  tomlIntegrity: number;
 }
 
-// Runs every registered anchor through all three probe dimensions (Issue
+// Runs every registered anchor through all four probe dimensions (Issue
 // #D007) and persists every sample straight into the durable health ledger
 // via `DurableProbeStore`, so a probe run survives past this invocation
 // instead of only existing in memory.
@@ -29,19 +31,27 @@ async function runProbeSweep(): Promise<ProbeSweepCounts> {
   const uptimeSink = new DurableProbeStore(store, 'uptime');
   const quoteSink = new DurableProbeStore(store, 'quote');
   const issuerSink = new DurableProbeStore(store, 'issuer-mismatch');
+  const integritySink = new DurableProbeStore(store, 'toml-integrity');
 
-  const [uptimeSamples, quoteSamples, issuerSamples] = await Promise.all([
+  const [uptimeSamples, quoteSamples, issuerSamples, integritySamples] = await Promise.all([
     probeAllAnchors(uptimeSink),
     probeAllAnchorQuotes(quoteSink),
     probeAllAnchorIssuers(issuerSink),
+    probeAllAnchorIntegrity(integritySink),
   ]);
 
-  await Promise.all([uptimeSink.drain(), quoteSink.drain(), issuerSink.drain()]);
+  await Promise.all([
+    uptimeSink.drain(),
+    quoteSink.drain(),
+    issuerSink.drain(),
+    integritySink.drain(),
+  ]);
 
   return {
     uptime: uptimeSamples.size,
     quote: quoteSamples.length,
     issuerMismatch: issuerSamples.length,
+    tomlIntegrity: integritySamples.length,
   };
 }
 
