@@ -259,7 +259,7 @@ describe('ScorecardCard', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('Sample size: 42 outcomes');
     expect(screen.getByRole('link', { name: 'Methodology docs' })).toHaveAttribute(
       'href',
-      expect.stringContaining('ANCHOR_REPUTATION.md')
+      '/methodology'
     );
   });
 });

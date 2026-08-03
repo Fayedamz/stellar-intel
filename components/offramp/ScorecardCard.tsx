@@ -260,8 +260,7 @@ function FreshnessBadge({ freshness }: { freshness: FreshnessResult | null }) {
 }
 
 const STELLAR_EXPERT_TX_BASE = 'https://stellar.expert/explorer/public/tx';
-const METHODOLOGY_DOC_URL =
-  'https://github.com/ezedike-evan/stellar-intel/blob/main/docs/ANCHOR_REPUTATION.md';
+const METHODOLOGY_DOC_URL = '/methodology';
 
 function CompositeScoreBreakdown({
   fillRate,
