@@ -6,6 +6,9 @@ import type {
 } from '@/types/reputation';
 import { SqliteReputationStore } from './sqlite';
 import { PostgresReputationStore, type SqlExecutor } from './postgres';
+import { getSqlExecutor, ReputationStoreUnavailableError } from './pool';
+
+export { ReputationStoreUnavailableError } from './pool';
 
 export const PROBE_RETENTION_DAYS = 90;
 
@@ -169,7 +172,10 @@ export interface StoreFactoryOptions {
   backend?: StoreBackend;
   /** SQLite file path (defaults to in-process `:memory:`). */
   sqlitePath?: string;
-  /** Required for the `postgres` backend: a pg-compatible query executor. */
+  /**
+   * Optional override for the `postgres` backend. Defaults to the shared pool
+   * from `./pool`; pass one only to inject a fake in tests.
+   */
   executor?: SqlExecutor;
 }
 
@@ -182,8 +188,9 @@ function resolveBackend(explicit?: StoreBackend): StoreBackend {
 }
 
 /**
- * Builds a store for the configured backend. Concrete drivers are required
- * lazily so the in-memory/SQLite paths never load the Postgres adapter.
+ * Builds a store for the configured backend. The `postgres` branch defaults to
+ * the shared pool (`./pool`) when no executor is supplied, so callers only pass
+ * one to inject a fake in tests.
  */
 export function createReputationStore(options: StoreFactoryOptions = {}): ReputationStore {
   const backend = resolveBackend(options.backend);
@@ -194,11 +201,15 @@ export function createReputationStore(options: StoreFactoryOptions = {}): Reputa
     case 'sqlite':
       return new SqliteReputationStore(options.sqlitePath);
     case 'postgres':
-      if (!options.executor) {
-        throw new Error('The postgres backend requires a SqlExecutor (options.executor).');
-      }
-      return new PostgresReputationStore(options.executor);
+      // Falls back to the shared pool rather than throwing (Issue #906). Before
+      // this, every caller that did not hand-build an executor — including
+      // `getReputationStore()`, which is all of them — threw here in production.
+      return new PostgresReputationStore(options.executor ?? getSqlExecutor());
     default:
+      // Deliberately NOT ReputationStoreUnavailableError: that type means "no
+      // durable store is configured", which read paths degrade on. A typo in
+      // REPUTATION_BACKEND is a misconfiguration and must stay loud rather than
+      // silently rendering an empty leaderboard.
       throw new Error(`Unknown reputation store backend: ${backend as string}`);
   }
 }
@@ -210,6 +221,25 @@ let singleton: ReputationStore | null = null;
 export function getReputationStore(): ReputationStore {
   if (!singleton) singleton = createReputationStore();
   return singleton;
+}
+
+/**
+ * `getReputationStore()` for read paths that can render without history.
+ *
+ * Returns `null` instead of throwing when no durable store is configured — the
+ * `next build` prerender and local dev without `DATABASE_URL` both hit that,
+ * and neither is a fault. Any other failure still propagates.
+ *
+ * Read paths kept trying to handle this around `store.query(...)`, which never
+ * worked: construction throws first, so those catch blocks were unreachable.
+ */
+export function tryGetReputationStore(): ReputationStore | null {
+  try {
+    return getReputationStore();
+  } catch (error) {
+    if (error instanceof ReputationStoreUnavailableError) return null;
+    throw error;
+  }
 }
 
 /** Test seam: swap in (or clear) the process store. */
