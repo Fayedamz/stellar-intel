@@ -7,13 +7,8 @@ const NORM_SETTLE_SECONDS: i128 = 300;
 const MIN_SETTLE_SECONDS: u64 = 1;
 
 fn clamp_bps(value: i128) -> i128 {
-    if value < 0 {
-        0
-    } else if value > MAX_BPS {
-        MAX_BPS
-    } else {
-        value
-    }
+    // MAX_BPS is a positive constant, so the panic-if-max-lt-min case cannot arise.
+    value.clamp(0, MAX_BPS)
 }
 
 fn normalize_settle_seconds(settle_seconds_p50: u64) -> i128 {
@@ -25,7 +20,11 @@ fn normalize_settle_seconds(settle_seconds_p50: u64) -> i128 {
     settle_seconds as i128
 }
 
-pub fn compute_composite_bps(fill_rate_bps: i128, slippage_bps: i128, settle_seconds_p50: u64) -> i128 {
+pub fn compute_composite_bps(
+    fill_rate_bps: i128,
+    slippage_bps: i128,
+    settle_seconds_p50: u64,
+) -> i128 {
     let fill_rate_bps = clamp_bps(fill_rate_bps);
     let slippage_bps = clamp_bps(slippage_bps);
     let settle_seconds = normalize_settle_seconds(settle_seconds_p50);
@@ -60,7 +59,11 @@ pub fn set_corridor_metrics(
         .set(&DataKey::Corridor(anchor_id, corridor), &metrics);
 }
 
-pub fn get_score_for_corridor(env: &Env, anchor_id: String, corridor: String) -> (i128, i128, u64, u32) {
+pub fn get_score_for_corridor(
+    env: &Env,
+    anchor_id: String,
+    corridor: String,
+) -> (i128, i128, u64, u32) {
     let default_metrics = (0i128, 0i128, 0u64, 0u32);
     let (fill_rate_bps, slippage_bps, settle_seconds_p50, n): (i128, i128, u64, u32) = env
         .storage()
