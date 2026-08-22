@@ -10,11 +10,11 @@ export default function WebhooksPage() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-900/20">
-        <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+      <div className="rounded-xl border border-status-unknown/40 bg-bg-sunken p-5 /50">
+        <p className="text-sm font-medium text-status-unknown">
           Status: Planned — Webhook support is on the roadmap (v2.3+).
         </p>
-        <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+        <p className="mt-1 text-sm text-status-unknown">
           Below is the proposed design. Implementation is tracked on GitHub.
         </p>
       </div>

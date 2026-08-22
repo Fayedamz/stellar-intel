@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { ANCHORS } from '@/constants';
 import { AnchorLogo } from '@/components/ui/AnchorLogo';
 import { weightedComposite } from '@/lib/reputation/composite';
+import { holdsTopRank, isMeasured, rankStandings, scoreLabel } from '@/lib/reputation/standings';
 
 export const metadata: Metadata = {
   title: 'Anchor Standings — Stellar Intel',
@@ -26,7 +27,8 @@ export const revalidate = 300; // 5 minutes
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface StandingsEntry {
-  rank: number;
+  // null for an anchor with no recorded outcomes: it is unranked, not last.
+  rank: number | null;
   anchorId: string;
   anchorName: string;
   composite: number;
@@ -37,21 +39,16 @@ interface StandingsEntry {
 }
 
 // ─── Score helpers ────────────────────────────────────────────────────────────
-
-/**
- * Composite score formula — mirrors app/api/reputation/leaderboard/route.ts.
- *
- *   composite = 0.4 × fill_rate
- *             + 0.3 × (1 − slippage_p50 / 0.05)
- *             + 0.3 × (1 − settle_p50 / 300)
- */
-function scoreLabel(score: number): { label: string; className: string } {
-  if (score >= 0.8)
-    return { label: 'Excellent', className: 'text-emerald-700 dark:text-emerald-400' };
-  if (score >= 0.6) return { label: 'Good', className: 'text-blue-600 dark:text-blue-400' };
-  if (score >= 0.4) return { label: 'Fair', className: 'text-yellow-600 dark:text-yellow-400' };
-  return { label: 'Poor', className: 'text-red-600 dark:text-red-400' };
-}
+//
+// The composite formula mirrors app/api/reputation/leaderboard/route.ts:
+//
+//   composite = 0.4 × fill_rate
+//             + 0.3 × (1 − slippage_p50 / 0.05)
+//             + 0.3 × (1 − settle_p50 / 300)
+//
+// `scoreLabel`, `rankStandings` and `holdsTopRank` live in
+// lib/reputation/standings.ts so the empty-sample rule can be tested. This is
+// an async server component; nothing declared in it is reachable from vitest.
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
 
@@ -110,160 +107,158 @@ async function loadStandings(): Promise<StandingsEntry[]> {
     })
   );
 
-  // Sort descending by composite score and assign ranks.
-  entries.sort((a, b) => b.composite - a.composite);
-  return entries.map((entry, index) => ({ rank: index + 1, ...entry }));
+  // Measured anchors first, descending by composite and numbered 1..m.
+  // Unmeasured anchors follow, unranked.
+  return rankStandings(entries);
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function StandingsPage() {
   const standings = await loadStandings();
+  const measured = standings.filter((entry) => isMeasured(entry.sampleSize));
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Anchor standings</h1>
+    <main className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
+      <header>
+        <h1 className="type-title">Anchor standings</h1>
+        <p className="text-secondary-text measure mt-4 text-base">
+          Reputation ranking across every registered anchor, over a 30-day rolling window, refreshed
+          every five minutes. Top-ranked anchors receive order-flow priority in the routing engine.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <p className="text-fg-muted font-mono text-xs tracking-wide">
+            {measured.length} of {standings.length} measured
+          </p>
           <Link
             href="/anchors"
-            className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+            className="text-secondary-text hover:text-primary-text focus-visible:ring-accent focus-visible:ring-offset-background inline-flex h-11 items-center rounded-sm font-mono text-xs tracking-wide underline underline-offset-4 transition-colors duration-100 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
-            ← All anchors
+            &larr; all anchors
           </Link>
         </div>
-        <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-          Reputation-based ranking for all registered Stellar anchors. Top-ranked anchors receive
-          order-flow priority in the routing engine. Rankings update every 5 minutes.
-        </p>
       </header>
 
-      {/* Scoring methodology callout */}
-      <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-300">
-        <strong>How rankings work:</strong> Composite score = 40% fill rate + 30% slippage (vs. 5%
-        ceiling) + 30% settlement speed (vs. 5 min). Higher is better. Anchors with insufficient
-        data (fewer than 1 confirmed transaction) show a score of 0.{' '}
-        <Link href="/methodology" className="underline">
-          Full methodology →
-        </Link>
-      </div>
+      {/* Method, stated inline rather than in a tinted callout box. A blue
+          "info" panel introduces a hue to say "this is a note"; a bordered
+          block says the same thing using the surface. */}
+      <section className="border-border bg-bg-subtle mt-12 rounded-sm border p-5">
+        <h2 className="text-fg-muted font-mono text-xs tracking-wide">how the ranking works</h2>
+        <p className="text-secondary-text mt-3 text-sm">
+          Composite score = 40% fill rate + 30% slippage against a 5% ceiling + 30% settlement speed
+          against a 5-minute reference. Higher is better. An anchor with no confirmed transactions
+          is listed as not yet measured rather than scored — it has not performed badly, it has not
+          been observed.{' '}
+          <Link
+            href="/methodology"
+            className="text-primary-text hover:text-accent underline underline-offset-4"
+          >
+            Full methodology &rarr;
+          </Link>
+        </p>
+      </section>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-        <table className="w-full text-sm">
+      <div className="border-border mt-12 overflow-x-auto border-t">
+        <table className="w-full min-w-[44rem] text-sm">
           <caption className="sr-only">Anchor reputation standings</caption>
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-              <th
-                scope="col"
-                className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400"
-              >
-                Rank
+            <tr className="text-fg-muted border-border border-b font-mono text-xs tracking-wide">
+              <th scope="col" className="py-3 pr-4 text-left font-medium">
+                rank
+              </th>
+              <th scope="col" className="py-3 pr-4 text-left font-medium">
+                anchor
+              </th>
+              <th scope="col" className="py-3 pr-4 text-right font-medium">
+                score
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400"
-              >
-                Anchor
-              </th>
-              <th
-                scope="col"
-                className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
-              >
-                Score
-              </th>
-              <th
-                scope="col"
-                className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+                className="py-3 pr-4 text-right font-medium"
                 title="Fraction of transactions that reached completed status"
               >
-                Fill rate
+                fill rate
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+                className="py-3 pr-4 text-right font-medium"
                 title="Median settlement time in seconds"
               >
-                Settle (p50)
+                settle p50
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+                className="py-3 pr-4 text-right font-medium"
                 title="Median slippage between quoted and delivered rate"
               >
-                Slippage (p50)
+                slippage p50
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+                className="py-3 text-right font-medium"
                 title="Number of transactions used to compute this score"
               >
-                Samples
+                samples
               </th>
             </tr>
           </thead>
           <tbody>
             {standings.map((entry) => {
-              const { label, className } = scoreLabel(entry.composite);
-              const isTop = entry.rank === 1;
+              const { label, className } = scoreLabel(entry.composite, entry.sampleSize);
+              const unmeasured = !isMeasured(entry.sampleSize);
+              const isTop = holdsTopRank(entry);
 
               return (
                 <tr
                   key={entry.anchorId}
-                  className={
-                    isTop
-                      ? 'border-t border-amber-200 bg-amber-50/40 dark:border-amber-800 dark:bg-amber-950/10'
-                      : 'border-t border-gray-200 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50'
-                  }
+                  className="border-border hover:bg-bg-subtle border-b transition-colors duration-100 ease-out"
                 >
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                        entry.rank === 1
-                          ? 'bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100'
-                          : entry.rank <= 3
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {entry.rank}
+                  <td className="py-4 pr-4">
+                    <span className="text-fg-muted font-mono text-xs tabular-nums">
+                      {entry.rank === null ? '—' : String(entry.rank).padStart(2, '0')}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="py-4 pr-4">
                     <Link
                       href={`/anchors/${entry.anchorId}`}
-                      className="flex items-center gap-2 group"
+                      className="group focus-visible:ring-accent focus-visible:ring-offset-background inline-flex items-center gap-2 rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                     >
                       <AnchorLogo
                         anchorId={entry.anchorId}
                         anchorName={entry.anchorName}
                         size="sm"
                       />
-                      <span className="font-medium text-gray-900 group-hover:underline dark:text-white">
+                      <span className="font-medium group-hover:underline group-hover:underline-offset-4">
                         {entry.anchorName}
                       </span>
                       {isTop && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                          #1 Ranked
-                        </span>
+                        /* The one accent on this page. */
+                        <span className="text-accent font-mono text-xs">#1</span>
                       )}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className={`font-semibold ${className}`}>
-                      {(entry.composite * 100).toFixed(1)}%
-                    </span>
-                    <span className={`ml-1.5 text-xs ${className}`}>{label}</span>
+                  <td className="py-4 pr-4 text-right">
+                    {unmeasured ? (
+                      <span className="text-fg-muted font-mono text-xs">{label}</span>
+                    ) : (
+                      <>
+                        <span className={`font-mono tabular-nums ${className}`}>
+                          {(entry.composite * 100).toFixed(1)}%
+                        </span>
+                        <span className={`ml-2 font-mono text-xs ${className}`}>{label}</span>
+                      </>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                  <td className="text-secondary-text py-4 pr-4 text-right font-mono tabular-nums">
                     {entry.sampleSize > 0 ? `${(entry.fillRate * 100).toFixed(1)}%` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                  <td className="text-secondary-text py-4 pr-4 text-right font-mono tabular-nums">
                     {entry.sampleSize > 0 ? `${entry.settleP50.toFixed(0)}s` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                  <td className="text-secondary-text py-4 pr-4 text-right font-mono tabular-nums">
                     {entry.sampleSize > 0 ? `${(entry.slippageP50 * 100).toFixed(2)}%` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400">
+                  <td className="text-fg-muted py-4 text-right font-mono tabular-nums">
                     {entry.sampleSize}
                   </td>
                 </tr>
@@ -273,10 +268,11 @@ export default async function StandingsPage() {
         </table>
       </div>
 
-      <p className="mt-4 text-xs text-secondary-text">
-        Rankings are based on a 30-day rolling window. Scores reflect only on-chain settled
-        transactions recorded in the Stellar Intel reputation store. Anchors with 0 samples have not
-        yet had transactions recorded and default to rank-bottom, not disqualified.
+      <p className="text-fg-muted measure mt-6 text-sm">
+        Scores reflect only on-chain settled transactions recorded in the Stellar Intel reputation
+        store. An anchor with zero samples is unranked rather than ranked last — absence of a record
+        is not evidence of poor performance, and treating it as such is how a monitor turns into a
+        rumour.
       </p>
     </main>
   );

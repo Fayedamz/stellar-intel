@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { Sun, Moon, AlertTriangle, Menu, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import { useTheme } from '@/hooks/useTheme';
 import { detectMcp } from '@/lib/mcp/detect';
 
@@ -73,30 +74,34 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-border bg-background">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <Link href="/" aria-label="Stellar Intel — home">
-            {/* SVG wordmark — theme-adaptive via prefers-color-scheme and
-                .dark class. The SVG is served as a static asset so we use a
-                plain <img> here; width/height prevent layout shift. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/wordmark.svg"
-              alt="Stellar Intel"
-              width={168}
-              height={30}
-              className="h-[30px] w-auto"
-            />
+          {/* The wordmark is type, not an image.
+              `/wordmark.svg` carried a viewBox with no width or height, so it
+              resolved to 0x0 and rendered as a broken image with its alt text
+              showing — on every page of the live site. It was also a
+              purple-to-teal gradient, which is no longer the identity. Setting
+              it in Archivo at the expanded width axis removes the asset,
+              adapts to both themes for free, and lets the identity typeface do
+              the work a logo file was doing badly. */}
+          <Link
+            href="/"
+            aria-label="Stellar Intel — home"
+            className="focus-visible:ring-accent focus-visible:ring-offset-background inline-flex h-11 items-center rounded-sm pr-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            <span className="text-[15px] leading-none font-bold tracking-[0.02em] whitespace-nowrap [font-variation-settings:'wdth'_125]">
+              STELLAR INTEL
+            </span>
           </Link>
           {mcpPresent && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-              Open in MCP
-            </span>
+            <Badge variant="success">
+              <span className="bg-status-up mr-1.5 inline-block h-1.5 w-1.5 rounded-full" />
+              open in mcp
+            </Badge>
           )}
           {publisherStale && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-              <AlertTriangle className="h-3 w-3" />
-              Publisher Stale
-            </span>
+            <Badge variant="warning">
+              <AlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+              publisher stale
+            </Badge>
           )}
         </div>
 
@@ -107,10 +112,13 @@ export function Header() {
               href={href}
               aria-current={pathname === href ? 'page' : undefined}
               className={clsx(
-                'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'inline-flex h-11 items-center rounded-sm px-3 text-sm font-medium',
+                'transition-colors duration-100 ease-out',
+                'focus-visible:ring-accent focus-visible:ring-offset-background',
+                'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                 pathname === href
-                  ? 'bg-primary-text/10 text-accent'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                  ? 'text-primary-text bg-bg-subtle'
+                  : 'text-secondary-text hover:text-primary-text hover:bg-bg-subtle'
               )}
             >
               {label}
@@ -119,8 +127,12 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={toggle} aria-label="Toggle theme">
-            {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          <Button variant="ghost" onClick={toggle} aria-label="Toggle theme" className="w-11 px-0">
+            {dark ? (
+              <Sun className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Moon className="h-4 w-4" aria-hidden="true" />
+            )}
           </Button>
           <button
             ref={menuButtonRef}
@@ -129,7 +141,7 @@ export function Header() {
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
             onClick={() => setMenuOpen((open) => !open)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-800 md:hidden"
+            className="text-secondary-text hover:text-primary-text hover:bg-bg-subtle focus-visible:ring-accent focus-visible:ring-offset-background inline-flex h-11 w-11 items-center justify-center rounded-sm transition-colors duration-100 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
           >
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -151,7 +163,7 @@ export function Header() {
                 'block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 pathname === href
                   ? 'bg-primary-text/10 text-accent'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                  : 'text-secondary-text hover:bg-bg-sunken dark:text-fg-muted dark:hover:bg-bg-sunken'
               )}
             >
               {label}

@@ -28,76 +28,93 @@ function AnchorsContent() {
   if (!activeCorridor) return null;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">Anchors</h1>
-          <span
-            aria-label={`${ANCHORS.length} live ${ANCHORS.length === 1 ? 'anchor' : 'anchors'}`}
-            className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-          >
-            <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
-            {ANCHORS.length} live {ANCHORS.length === 1 ? 'anchor' : 'anchors'}
-          </span>
+    <main className="mx-auto max-w-5xl px-4 py-12 sm:py-16">
+      <header>
+        <h1 className="type-title">Anchors</h1>
+        <p className="text-secondary-text measure mt-4 text-base">
+          Every anchor in the registry, what it publishes about itself, and how it has actually
+          performed on the corridors it is registered for.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/* Was a green "N live anchors" pill. Nothing on this page establishes
+              that an anchor is live — that is what the probe record decides, and
+              a registered anchor with no successful probe is exactly the case
+              this product exists to surface. "Registered" is the claim the
+              registry can actually support. */}
+          <p className="text-fg-muted font-mono text-xs tracking-wide">
+            {ANCHORS.length} registered
+          </p>
           <Link
             href="/anchors/standings"
-            className="rounded-full border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="text-secondary-text hover:text-primary-text focus-visible:ring-accent focus-visible:ring-offset-background inline-flex h-11 items-center rounded-sm font-mono text-xs tracking-wide underline underline-offset-4 transition-colors duration-100 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
-            Reputation standings →
+            reputation standings &rarr;
           </Link>
         </div>
-        <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-          Explore registered Stellar anchors, their supported protocols, and corridor coverage.
-        </p>
       </header>
 
-      <section className="mb-10" aria-labelledby="anchor-scorecards-heading">
+      <section className="mt-16" aria-labelledby="anchor-scorecards-heading">
         <h2
           id="anchor-scorecards-heading"
-          className="mb-4 text-lg font-semibold text-gray-900 dark:text-white"
+          className="text-fg-muted font-mono text-xs tracking-wide"
         >
-          Anchor scorecards
+          scorecards
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {ANCHORS.map((anchor) => (
             <AnchorCard key={anchor.id} anchor={anchor} />
           ))}
         </div>
       </section>
 
-      <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-        Corridor leaderboard
-      </h2>
+      <section className="mt-24" aria-labelledby="corridor-leaderboard-heading">
+        <h2 id="corridor-leaderboard-heading" className="type-title">
+          Corridor leaderboard
+        </h2>
+        <p className="text-secondary-text measure mt-4 text-base">
+          Ranked on a $100 USDC reference amount, refreshed every 30 seconds. An anchor that does
+          not answer is listed as unavailable rather than dropped.
+        </p>
 
-      {/* Corridor filter tabs */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {CORRIDORS.map((corridor) => (
-          <button
-            key={corridor.id}
-            onClick={() => selectCorridor(corridor.id)}
-            className={
-              corridor.id === activeCorridor.id
-                ? 'rounded-full bg-blue-600 px-4 py-1.5 text-sm font-medium text-white'
-                : 'rounded-full border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800'
-            }
-          >
-            {corridor.from}/{corridor.to}
-          </button>
-        ))}
-      </div>
+        {/* Corridor filter. Square controls, not pills — and the selected one is
+            marked by surface and border rather than a filled accent, so the
+            accent stays available for the result that matters. */}
+        <div
+          className="mt-8 flex flex-wrap gap-2"
+          role="group"
+          aria-label="Filter leaderboard by corridor"
+        >
+          {CORRIDORS.map((corridor) => {
+            const selected = corridor.id === activeCorridor.id;
+            return (
+              <button
+                key={corridor.id}
+                type="button"
+                onClick={() => selectCorridor(corridor.id)}
+                aria-pressed={selected}
+                className={
+                  selected
+                    ? 'border-control-border bg-bg-subtle text-primary-text focus-visible:ring-accent focus-visible:ring-offset-background inline-flex h-11 items-center rounded-sm border px-4 font-mono text-xs tracking-wide focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                    : 'border-border text-secondary-text hover:text-primary-text hover:border-control-border focus-visible:ring-accent focus-visible:ring-offset-background inline-flex h-11 items-center rounded-sm border px-4 font-mono text-xs tracking-wide transition-colors duration-100 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                }
+              >
+                {corridor.from}/{corridor.to}
+              </button>
+            );
+          })}
+        </div>
 
-      <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-        Rates based on a $100 USDC reference amount. Updated every 30 s.
-      </p>
-
-      <Leaderboard corridor={activeCorridor} />
+        <div className="mt-8">
+          <Leaderboard corridor={activeCorridor} />
+        </div>
+      </section>
     </main>
   );
 }
 
 export default function AnchorsPage() {
   return (
-    <Suspense fallback={<main className="mx-auto max-w-5xl px-4 py-8" />}>
+    <Suspense fallback={<main className="mx-auto max-w-5xl px-4 py-12 sm:py-16" />}>
       <AnchorsContent />
     </Suspense>
   );

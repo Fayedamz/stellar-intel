@@ -13,12 +13,8 @@ export default function SdksPage() {
       {/* TypeScript SDK */}
       <section className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-900/30">
-            <svg
-              className="h-6 w-6 text-blue-600 dark:text-blue-400"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
+          <div className="rounded-lg bg-accent-subtle p-2">
+            <svg className="h-6 w-6 text-accent" viewBox="0 0 24 24" fill="currentColor">
               <path d="M0 12v6.5l12 5.5 12-5.5V12l-12 5.5L0 12zm0-6.5L12 11 24 5.5 12 0 0 5.5z" />
             </svg>
           </div>
@@ -30,11 +26,11 @@ export default function SdksPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-900/50 dark:bg-blue-900/20">
-          <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+        <div className="rounded-xl border border-border bg-accent-subtle p-5 /50">
+          <p className="text-sm font-medium text-accent">
             Status: Planned — The typed SDK is a v4 deliverable.
           </p>
-          <p className="mt-1 text-sm text-blue-700 dark:text-blue-400">
+          <p className="mt-1 text-sm text-accent dark:text-accent">
             Until it ships, use the HTTP API directly (examples below).
           </p>
         </div>
@@ -78,12 +74,8 @@ export async function submitOfframpIntent(body: unknown) {
       {/* Python SDK */}
       <section className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-green-50 p-2 dark:bg-green-900/30">
-            <svg
-              className="h-6 w-6 text-green-600 dark:text-green-400"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
+          <div className="rounded-lg bg-accent-subtle p-2">
+            <svg className="h-6 w-6 text-status-up" viewBox="0 0 24 24" fill="currentColor">
               <path d="M11.9 0C10.07 0 8.54.37 7.5 1.12c-1.04.75-1.56 1.78-1.56 3v2.25c0 .87.26 1.48.78 1.86.52.37 1.2.56 2.03.56h3.9c.84 0 1.54.26 2.1.78.56.52.83 1.22.83 2.1v1.5H9.22c-.87 0-1.66.28-2.35.84-.67.56-1.01 1.3-1.01 2.22v4.22c0 .85.33 1.6 1 2.25.67.66 1.47 1.08 2.4 1.28.94.2 1.86.3 2.78.3 1.86 0 3.36-.42 4.52-1.28 1.16-.85 1.74-2 1.74-3.45v-2.06c0-.87-.27-1.56-.8-2.06-.54-.5-1.23-.75-2.08-.75h-4.1c-.86 0-1.57-.28-2.12-.84-.56-.56-.84-1.27-.84-2.1v-1.5h6.75c.87 0 1.6-.24 2.2-.72.6-.48.9-1.2.9-2.16v-4.5c0-.93-.34-1.7-1.03-2.3C15.6.32 14.4 0 12.65 0H11.9zm-.5 2.25c.4 0 .74.14 1.02.42.28.28.42.62.42 1.02 0 .4-.14.74-.42 1.02-.28.28-.64.42-1.04.42-.4 0-.74-.14-1.02-.42a1.38 1.38 0 01-.4-1.02c0-.4.14-.74.42-1.02.28-.28.63-.42 1.03-.42z" />
             </svg>
           </div>
@@ -133,9 +125,9 @@ def get_leaderboard(corridor: str | None = None) -> dict:
       {/* Rust SDK */}
       <section className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-orange-50 p-2 dark:bg-orange-900/30">
+          <div className="rounded-sm bg-bg-sunken p-2">
             <svg
-              className="h-6 w-6 text-orange-600 dark:text-orange-400"
+              className="h-6 w-6 text-status-unknown dark:text-status-unknown"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
@@ -197,9 +189,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       {/* MCP Package */}
       <section className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-purple-50 p-2 dark:bg-purple-900/30">
+          <div className="rounded-lg bg-bg-sunken p-2 dark:bg-accent-subtle">
             <svg
-              className="h-6 w-6 text-purple-600 dark:text-purple-400"
+              className="h-6 w-6 text-accent dark:text-accent"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
@@ -244,7 +236,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 <td className="px-3 py-2 font-mono text-xs text-accent">@stellarintel/sdk</td>
                 <td className="px-3 py-2 text-secondary-text">TypeScript</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                  <span className="rounded-full bg-bg-sunken px-2 py-0.5 text-xs text-status-unknown">
                     Planned
                   </span>
                 </td>
@@ -254,7 +246,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 <td className="px-3 py-2 font-mono text-xs text-accent">@stellarintel/mcp</td>
                 <td className="px-3 py-2 text-secondary-text">TypeScript</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <span className="rounded-full bg-accent-subtle px-2 py-0.5 text-xs text-status-up">
                     Published
                   </span>
                 </td>
@@ -273,7 +265,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 <td className="px-3 py-2 font-mono text-xs text-accent">@stellarintel/publisher</td>
                 <td className="px-3 py-2 text-secondary-text">TypeScript</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <span className="rounded-full bg-accent-subtle px-2 py-0.5 text-xs text-status-up">
                     Published
                   </span>
                 </td>
@@ -294,7 +286,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 </td>
                 <td className="px-3 py-2 text-secondary-text">Rust</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <span className="rounded-full bg-accent-subtle px-2 py-0.5 text-xs text-status-up">
                     Published
                   </span>
                 </td>
@@ -313,7 +305,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 <td className="px-3 py-2 font-mono text-xs text-accent">stellar-intel (Python)</td>
                 <td className="px-3 py-2 text-secondary-text">Python</td>
                 <td className="px-3 py-2">
-                  <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                  <span className="rounded-full bg-bg-sunken px-2 py-0.5 text-xs text-status-unknown">
                     Planned
                   </span>
                 </td>

@@ -19,7 +19,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     question: `How is this different from a block explorer or a single anchor's app?`,
-    answer: `We compare live rates across every integrated anchor and rank by net landed value (rate − fees − slippage − historical fill-rate penalty), not headline rate — then let you execute in one click. Plus a public reputation oracle and an MCP agent surface. It's the execution layer, not just a price page.`,
+    answer: `An explorer tells you what settled on-chain. An anchor's own app tells you what that anchor says about itself. Neither answers "did this anchor respond on its endpoints this week, and does its stellar.toml still match what is on-chain" — that is the record we keep, on a five-minute clock, with the scoring method published and small samples labelled as small. The execution path is real and non-custodial, but the record is the half that works without anyone's cooperation.`,
   },
   {
     question: `Why did anchor X not show up in the comparison?`,
@@ -69,10 +69,10 @@ export function Faq() {
 
   return (
     <section aria-labelledby="faq-heading">
-      <h2 id="faq-heading" className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
+      <h2 id="faq-heading" className="mb-6 text-xl font-semibold text-primary-text">
         Frequently asked questions
       </h2>
-      <dl className="divide-y divide-gray-200 rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+      <dl className="divide-y divide-gray-200 rounded-xl border border-border dark:divide-gray-700">
         {FAQ_ITEMS.map(({ question, answer }, index) => {
           const isOpen = openIndex === index;
           const panelId = `faq-panel-${index}`;
@@ -88,13 +88,13 @@ export function Faq() {
                   type="button"
                   aria-expanded={isOpen}
                   aria-controls={panelId}
-                  className="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+                  className="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
                   onClick={() => toggle(index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                 >
                   <span>{question}</span>
                   <ChevronDown
-                    className={`ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400 ${isOpen ? 'rotate-180' : ''}`}
+                    className={`ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted ${isOpen ? 'rotate-180' : ''}`}
                     aria-hidden="true"
                   />
                 </button>
@@ -102,7 +102,7 @@ export function Faq() {
               <dd
                 id={panelId}
                 hidden={!isOpen}
-                className="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+                className="px-5 pb-4 pt-0 text-sm text-secondary-text"
               >
                 {answer}
               </dd>

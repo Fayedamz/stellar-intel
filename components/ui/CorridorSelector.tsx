@@ -29,9 +29,9 @@ interface CorridorSelectorProps {
 export function CorridorSelector({ value, onChange }: CorridorSelectorProps) {
   return (
     <div>
-      <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-secondary-text">
         Corridor
-        <kbd className="rounded border border-gray-300 px-1 font-mono text-[10px] font-normal text-secondary-text dark:border-gray-600">
+        <kbd className="rounded border border-control-border px-1 font-mono text-[10px] font-normal text-secondary-text">
           K
         </kbd>
       </label>
@@ -39,7 +39,7 @@ export function CorridorSelector({ value, onChange }: CorridorSelectorProps) {
         id="corridor-select"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-control-border bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:bg-gray-800 dark:text-white"
+        className="w-full rounded-lg border border-control-border bg-bg-subtle px-3 py-2.5 text-sm text-primary-text focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
       >
         {SELECTABLE_CORRIDORS.map((c) => (
           <option key={c.id} value={c.id}>

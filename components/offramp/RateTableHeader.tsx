@@ -48,7 +48,7 @@ export function RateTableHeader({
   return (
     <div className="mb-3 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Available Rates</h2>
+        <h2 className="text-sm font-semibold text-secondary-text">Available Rates</h2>
         <AnchorCountBadge responding={respondingCount} total={totalCount} />
 
         {lastFetchedAt !== null && (
@@ -68,10 +68,10 @@ export function RateTableHeader({
                   aria-valuenow={secondsRemaining}
                   aria-valuemin={0}
                   aria-valuemax={totalSeconds}
-                  className="inline-block h-1 w-10 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+                  className="inline-block h-1 w-10 overflow-hidden rounded-full bg-bg-sunken"
                 >
                   <span
-                    className="block h-full rounded-full bg-blue-500 transition-[width] duration-1000 ease-linear dark:bg-blue-400"
+                    className="block h-full rounded-full bg-accent transition-[width] duration-1000 ease-linear dark:bg-accent"
                     style={{
                       width: `${Math.max(0, Math.min(100, (1 - progress) * 100))}%`,
                     }}
@@ -87,7 +87,7 @@ export function RateTableHeader({
         onClick={onRefresh}
         aria-label={refreshInflight ? 'Refreshing rates...' : 'Refresh rates'}
         aria-busy={refreshInflight}
-        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-fg-muted hover:bg-bg-sunken hover:text-secondary-text dark:hover:bg-bg-sunken dark:hover:text-secondary-text"
       >
         <svg
           className={`h-3.5 w-3.5 ${refreshInflight ? 'animate-spin' : ''}`}
@@ -106,7 +106,7 @@ export function RateTableHeader({
         Refresh
         <kbd
           aria-hidden="true"
-          className="rounded border border-gray-300 px-1 font-mono text-[10px] font-normal text-secondary-text dark:border-gray-600"
+          className="rounded border border-control-border px-1 font-mono text-[10px] font-normal text-secondary-text"
         >
           R
         </kbd>

@@ -33,8 +33,18 @@ export function AnchorLogo({ anchorId, anchorName, size = 'md', className }: Anc
     setLogoFailed(false);
   }, [anchorId]);
 
+  // These are the anchors' own brand marks, so the colour belongs to them — but
+  // seven saturated logos in a column will out-shout a single accent and turn a
+  // record into a directory listing. They sit slightly desaturated by default
+  // and come to full colour on hover or focus within the row, which keeps
+  // recognition without spending the page's colour budget on avatars.
+  //
+  // `rounded-full` is deliberate here and is the only place it is used: a logo
+  // mark is genuinely circular, unlike the status chips that used to be pills.
   const baseClassName = clsx(
-    'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100 font-semibold text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200',
+    'border-border bg-bg-sunken text-secondary-text inline-flex shrink-0 items-center justify-center',
+    'overflow-hidden rounded-full border font-medium',
+    'saturate-[0.75] transition-[filter] duration-100 ease-out group-hover:saturate-100 group-focus-visible:saturate-100',
     sizeClasses[size],
     className
   );

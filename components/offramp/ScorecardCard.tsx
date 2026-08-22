@@ -216,7 +216,7 @@ function FreshnessBadge({ freshness }: { freshness: FreshnessResult | null }) {
 
   return (
     <div
-      className={`rounded-lg border border-gray-200 ${colors.bg} p-3 dark:border-gray-700`}
+      className={`rounded-lg border border-border ${colors.bg} p-3`}
       role="status"
       aria-label={`Probe health: ${label}`}
     >
@@ -279,7 +279,7 @@ function CompositeScoreBreakdown({
 
   return (
     <div className="space-y-2">
-      <p className="font-medium text-gray-900 dark:text-white">
+      <p className="font-medium text-primary-text">
         composite = fill rate × (1 − slippage) ÷ (settle ÷ {NORM_SETTLE_SECONDS}s)
       </p>
       <ul className="space-y-1">
@@ -287,14 +287,14 @@ function CompositeScoreBreakdown({
         <li>Slippage (p50): {slippagePercent}</li>
         <li>Settle (p50): {settleSeconds}</li>
       </ul>
-      <p className="text-gray-500 dark:text-gray-400">
+      <p className="text-fg-muted">
         Sample size: {sampleSize} outcome{sampleSize !== 1 ? 's' : ''}
       </p>
       <a
         href={METHODOLOGY_DOC_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-block text-blue-600 hover:underline dark:text-blue-400"
+        className="inline-block text-accent hover:underline dark:text-accent"
       >
         Methodology docs
       </a>
@@ -309,20 +309,18 @@ function MetadataSection({ metadata }: { metadata: AnchorMetadata }) {
   return (
     <dl className="grid gap-3 sm:grid-cols-2">
       {hasRegions && (
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
-          <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Regions
-          </dt>
-          <dd className="mt-2 space-y-1 text-sm text-gray-900 dark:text-gray-100">
+        <div className="rounded-2xl border border-border bg-bg-sunken p-4 /60">
+          <dt className="text-xs uppercase tracking-wide text-fg-muted">Regions</dt>
+          <dd className="mt-2 space-y-1 text-sm text-primary-text">
             {metadata.regions?.senders && (
               <p>
-                <span className="text-gray-500 dark:text-gray-400">Senders: </span>
+                <span className="text-fg-muted">Senders: </span>
                 {metadata.regions.senders}
               </p>
             )}
             {metadata.regions?.receivers && (
               <p>
-                <span className="text-gray-500 dark:text-gray-400">Receivers: </span>
+                <span className="text-fg-muted">Receivers: </span>
                 {metadata.regions.receivers}
               </p>
             )}
@@ -330,13 +328,11 @@ function MetadataSection({ metadata }: { metadata: AnchorMetadata }) {
         </div>
       )}
       {(metadata.kycModel || metadata.feeModel) && (
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+        <div className="rounded-2xl border border-border bg-bg-sunken p-4 /60">
           {metadata.kycModel && (
             <>
-              <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                KYC model
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">{metadata.kycModel}</dd>
+              <dt className="text-xs uppercase tracking-wide text-fg-muted">KYC model</dt>
+              <dd className="mt-1 text-sm text-primary-text">{metadata.kycModel}</dd>
             </>
           )}
           {metadata.feeModel && (
@@ -344,13 +340,13 @@ function MetadataSection({ metadata }: { metadata: AnchorMetadata }) {
               <dt
                 className={
                   metadata.kycModel
-                    ? 'mt-3 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400'
-                    : 'text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400'
+                    ? 'mt-3 text-xs uppercase tracking-wide text-fg-muted'
+                    : 'text-xs uppercase tracking-wide text-fg-muted'
                 }
               >
                 Fees
               </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">{metadata.feeModel}</dd>
+              <dd className="mt-1 text-sm text-primary-text">{metadata.feeModel}</dd>
             </>
           )}
         </div>
@@ -459,9 +455,8 @@ export function ScorecardCard({
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <AnchorLogo anchorId={anchorId} anchorName={anchorName} size="sm" />
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            <span className="font-semibold text-gray-900 dark:text-white">{anchorName}</span>{' '}
-            reputation
+          <p className="text-sm font-medium text-secondary-text">
+            <span className="font-semibold text-primary-text">{anchorName}</span> reputation
           </p>
           {latestOracleTxHash && (
             <a
@@ -469,30 +464,30 @@ export function ScorecardCard({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="View latest oracle transaction on stellar.expert"
-              className="text-secondary-text hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+              className="text-secondary-text hover:text-accent dark:hover:text-accent transition-colors"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
           )}
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Window: {timeframe}</p>
+        <p className="text-xs text-fg-muted">Window: {timeframe}</p>
       </div>
 
       {isLoading ? (
-        <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="overflow-hidden rounded-xl border border-border">
           <Skeleton rows={3} />
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-300">
+        <div className="rounded-xl border border-status-down/40 bg-bg-sunken p-4 text-sm text-status-down">
           {error}
         </div>
       ) : !hasReputationMetrics(metrics) ? (
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-300">
+        <div className="rounded-xl border border-border bg-bg-sunken p-4 text-sm text-secondary-text /60">
           No reputation metrics available for this anchor.
         </div>
       ) : !enoughData ? (
-        <div className="flex flex-col items-center justify-center py-10 px-4 text-center border rounded-xl bg-gray-50/50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-700">
-          <div className="w-12 h-12 mb-4 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500 dark:text-blue-400">
+        <div className="flex flex-col items-center justify-center py-10 px-4 text-center border rounded-xl bg-bg-sunken/50 /30 border-border">
+          <div className="w-12 h-12 mb-4 rounded-full bg-accent-subtle flex items-center justify-center text-accent dark:text-accent">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
@@ -502,15 +497,13 @@ export function ScorecardCard({
               />
             </svg>
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-            Collecting Data
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-5">
+          <h3 className="text-sm font-semibold text-primary-text mb-1">Collecting Data</h3>
+          <p className="text-sm text-fg-muted max-w-sm mb-5">
             We are still evaluating {anchorName}. We need <strong>{remaining}</strong> more outcome
             {remaining !== 1 ? 's' : ''} to generate a reliable, statistically significant
             reputation score.
           </p>
-          <div className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-200/70 rounded-full dark:bg-gray-700 dark:text-gray-300">
+          <div className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-secondary-text bg-bg-sunken/70 rounded-full">
             Expected scorecard generation: {estimateTimeToThreshold(metrics.outcomesCount)}
           </div>
         </div>
@@ -518,11 +511,9 @@ export function ScorecardCard({
         <div className="space-y-4">
           <FreshnessBadge freshness={freshness} />
           {compositeScore !== null && (
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
+            <div className="rounded-2xl border border-border bg-bg-sunken p-4 /60">
               <div className="flex items-center gap-1.5">
-                <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Composite score
-                </dt>
+                <dt className="text-xs uppercase tracking-wide text-fg-muted">Composite score</dt>
                 <Tooltip
                   content={
                     <CompositeScoreBreakdown
@@ -539,37 +530,33 @@ export function ScorecardCard({
                   />
                 </Tooltip>
               </div>
-              <dd className="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">
+              <dd className="mt-3 text-2xl font-semibold text-primary-text">
                 {compositeScore.toFixed(2)}
               </dd>
             </div>
           )}
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
-              <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Fill rate
-              </dt>
-              <dd className="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">
+            <div className="rounded-2xl border border-border bg-bg-sunken p-4 /60">
+              <dt className="text-xs uppercase tracking-wide text-fg-muted">Fill rate</dt>
+              <dd className="mt-3 text-2xl font-semibold text-primary-text">
                 {formatFillRate(metrics.fillRate)}
               </dd>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
-              <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Settle
-              </dt>
-              <dd className="mt-3 space-y-2 text-sm text-gray-900 dark:text-gray-100">
+            <div className="rounded-2xl border border-border bg-bg-sunken p-4 /60">
+              <dt className="text-xs uppercase tracking-wide text-fg-muted">Settle</dt>
+              <dd className="mt-3 space-y-2 text-sm text-primary-text">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">p50</span>
+                  <span className="text-fg-muted">p50</span>
                   <span>{formatSeconds(metrics.settleP50)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">p95</span>
+                  <span className="text-fg-muted">p95</span>
                   <span>{formatSeconds(metrics.settleP95)}</span>
                 </div>
                 {historyData.length > 0 && (
                   <div
-                    className="pt-2 flex justify-center border-t border-gray-200 dark:border-gray-800"
+                    className="pt-2 flex justify-center border-t border-border"
                     data-testid="scorecard-sparkline"
                   >
                     <Sparkline data={historyData} />
@@ -578,17 +565,15 @@ export function ScorecardCard({
               </dd>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/60">
-              <dt className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Slippage
-              </dt>
-              <dd className="mt-3 space-y-2 text-sm text-gray-900 dark:text-gray-100">
+            <div className="rounded-2xl border border-border bg-bg-sunken p-4 /60">
+              <dt className="text-xs uppercase tracking-wide text-fg-muted">Slippage</dt>
+              <dd className="mt-3 space-y-2 text-sm text-primary-text">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">p50</span>
+                  <span className="text-fg-muted">p50</span>
                   <span>{formatPercent(metrics.slippageP50)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">p95</span>
+                  <span className="text-fg-muted">p95</span>
                   <span>{formatPercent(metrics.slippageP95)}</span>
                 </div>
               </dd>

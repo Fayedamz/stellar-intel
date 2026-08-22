@@ -10,7 +10,7 @@ import { AnchorLogo } from '@/components/ui/AnchorLogo';
 export function LogoWall() {
   return (
     <section aria-label="Supported anchors">
-      <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-fg-muted">
         Supported anchors
       </p>
       <ul className="flex flex-wrap items-center gap-x-8 gap-y-5">
@@ -18,12 +18,12 @@ export function LogoWall() {
           <li key={anchor.id}>
             <div
               tabIndex={0}
-              className="group flex items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="group flex items-center gap-2.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <span className="grayscale opacity-70 transition-all duration-200 group-hover:grayscale-0 group-hover:opacity-100 group-focus-visible:grayscale-0 group-focus-visible:opacity-100">
                 <AnchorLogo anchorId={anchor.id} anchorName={anchor.name} size="sm" />
               </span>
-              <span className="text-sm font-medium text-gray-500 transition-colors duration-200 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white">
+              <span className="text-sm font-medium text-fg-muted transition-colors duration-200 group-hover:text-primary-text dark:text-fg-muted dark:group-hover:text-white">
                 {anchor.name}
               </span>
             </div>

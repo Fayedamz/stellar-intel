@@ -2,10 +2,10 @@
 
 exports[`FeatureGrid > matches the visual snapshot for a fixed feature list 1`] = `
 <section
-  class="rounded-xl border border-gray-200 p-4 dark:border-gray-700 dark:bg-gray-800/50 sm:p-6"
+  class="rounded-xl border border-border p-4 /50 sm:p-6"
 >
   <h2
-    class="mb-6 text-lg font-semibold text-gray-900 dark:text-white"
+    class="mb-6 text-lg font-semibold text-primary-text"
   >
     How it works
   </h2>
@@ -16,11 +16,11 @@ exports[`FeatureGrid > matches the visual snapshot for a fixed feature list 1`] 
       class="flex flex-col items-center px-2 text-center sm:flex-1 sm:px-4"
     >
       <div
-        class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/40"
+        class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent-subtle/40"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-globe h-6 w-6 text-blue-600 dark:text-blue-400"
+          class="lucide lucide-globe h-6 w-6 text-accent"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -45,18 +45,18 @@ exports[`FeatureGrid > matches the visual snapshot for a fixed feature list 1`] 
         </svg>
       </div>
       <span
-        class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+        class="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted"
       >
         Step 
         01
       </span>
       <div
-        class="font-medium text-gray-900 dark:text-white"
+        class="font-medium text-primary-text"
       >
         Pick your corridor
       </div>
       <div
-        class="mt-1 text-sm text-gray-600 dark:text-gray-300"
+        class="mt-1 text-sm text-secondary-text"
       >
         Choose a destination and amount.
       </div>
@@ -65,18 +65,18 @@ exports[`FeatureGrid > matches the visual snapshot for a fixed feature list 1`] 
       class="mt-6 hidden w-8 shrink-0 sm:block"
     >
       <div
-        class="h-px w-full bg-gray-200 dark:bg-gray-700"
+        class="h-px w-full bg-bg-sunken"
       />
     </div>
     <div
       class="flex flex-col items-center px-2 text-center sm:flex-1 sm:px-4"
     >
       <div
-        class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/40"
+        class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent-subtle/40"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-chart-column h-6 w-6 text-blue-600 dark:text-blue-400"
+          class="lucide lucide-chart-column h-6 w-6 text-accent"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -102,18 +102,18 @@ exports[`FeatureGrid > matches the visual snapshot for a fixed feature list 1`] 
         </svg>
       </div>
       <span
-        class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+        class="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted"
       >
         Step 
         02
       </span>
       <div
-        class="font-medium text-gray-900 dark:text-white"
+        class="font-medium text-primary-text"
       >
         Compare live quotes
       </div>
       <div
-        class="mt-1 text-sm text-gray-600 dark:text-gray-300"
+        class="mt-1 text-sm text-secondary-text"
       >
         We pull live SEP-38 quotes.
       </div>
@@ -122,18 +122,18 @@ exports[`FeatureGrid > matches the visual snapshot for a fixed feature list 1`] 
       class="mt-6 hidden w-8 shrink-0 sm:block"
     >
       <div
-        class="h-px w-full bg-gray-200 dark:bg-gray-700"
+        class="h-px w-full bg-bg-sunken"
       />
     </div>
     <div
       class="flex flex-col items-center px-2 text-center sm:flex-1 sm:px-4"
     >
       <div
-        class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/40"
+        class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent-subtle/40"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-zap h-6 w-6 text-blue-600 dark:text-blue-400"
+          class="lucide lucide-zap h-6 w-6 text-accent"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -150,18 +150,18 @@ exports[`FeatureGrid > matches the visual snapshot for a fixed feature list 1`] 
         </svg>
       </div>
       <span
-        class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+        class="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-muted"
       >
         Step 
         03
       </span>
       <div
-        class="font-medium text-gray-900 dark:text-white"
+        class="font-medium text-primary-text"
       >
         Execute in one click
       </div>
       <div
-        class="mt-1 text-sm text-gray-600 dark:text-gray-300"
+        class="mt-1 text-sm text-secondary-text"
       >
         Sign once and settle on Stellar.
       </div>

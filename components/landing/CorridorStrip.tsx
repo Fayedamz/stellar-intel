@@ -35,14 +35,14 @@ export function CorridorStrip() {
 
   return (
     <section aria-label="Supported corridors">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
         Supported corridors
       </p>
       <ul className="flex flex-wrap gap-2">
         {destinations.map((corridor) => (
           <li
             key={corridor.id}
-            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-bg-subtle px-3 py-1.5 text-sm font-medium text-secondary-text"
           >
             <span aria-hidden="true" className="text-base leading-none">
               {flagEmoji(corridor.countryCode)}

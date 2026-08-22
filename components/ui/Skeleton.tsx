@@ -8,6 +8,16 @@ interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
   cellClassName?: string;
 }
 
+/**
+ * Loading placeholders read from the surface tokens rather than raw greys, so
+ * they sit on the page instead of hovering slightly off it — `bg-bg-sunken` on a
+ * warm off-white is visibly the wrong grey, and `bg-bg-sunken` is far too light
+ * against the dark surface.
+ *
+ * A skeleton should also match the shape of what loads. These are thin bars at
+ * text height rather than large blocks, because what arrives is rows of
+ * numbers.
+ */
 export function Skeleton({
   rows,
   columns = 5,
@@ -25,14 +35,11 @@ export function Skeleton({
       <table className="w-full text-sm">
         <tbody>
           {Array.from({ length: rowCount }).map((_, i) => (
-            <tr key={i} className="border-t border-gray-200 dark:border-gray-700">
+            <tr key={i} className="border-border border-t">
               {Array.from({ length: columns }).map((__, j) => (
                 <td key={j} className="px-4 py-3">
                   <div
-                    className={clsx(
-                      'h-4 animate-pulse rounded bg-gray-200 dark:bg-gray-700',
-                      cellClassName
-                    )}
+                    className={clsx('bg-bg-sunken h-3 animate-pulse rounded-sm', cellClassName)}
                   />
                 </td>
               ))}
@@ -46,7 +53,7 @@ export function Skeleton({
   return (
     <div
       aria-hidden="true"
-      className={clsx('animate-pulse rounded-md bg-gray-200 dark:bg-gray-700', className)}
+      className={clsx('bg-bg-sunken animate-pulse rounded-sm', className)}
       {...props}
     />
   );

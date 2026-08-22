@@ -161,23 +161,16 @@ const BANNED = [
  * later". Anything added here needs the same kind of reason.
  */
 const EXEMPT: Array<{ file: string; reason: string }> = [
-  {
-    file: 'components/ui/Sparkline.tsx',
-    reason: 'aria-hidden decorative empty-state baseline — carries no information',
-  },
-  {
-    file: 'components/offramp/RateTable.tsx',
-    reason: 'disabled "Unavailable" button — WCAG 1.4.3 exempts disabled controls',
-  },
-  {
-    file: 'components/offramp/ExecuteDrawer.tsx',
-    reason:
-      'pending step markers — inactive controls are exempt, and the active step must stand out',
-  },
-  {
-    file: 'components/docs/CodeBlock.tsx',
-    reason: 'copy button sits on bg-gray-950 in both themes, measured 7.5:1',
-  },
+  // Empty, and worth keeping empty.
+  //
+  // The four entries that used to live here — Sparkline, RateTable,
+  // ExecuteDrawer and CodeBlock — were all resolved when the components moved
+  // onto semantic theme tokens. None of them contains a raw grey any more, so
+  // none of them needs excusing.
+  //
+  // Anything added back needs the same kind of reason the originals had: exempt
+  // under the spec, or measured against a background other than the page
+  // background. Not "we'll fix it later".
 ];
 
 function tsxFiles(dir: string): string[] {
@@ -236,6 +229,40 @@ describe('components do not reintroduce failing raw greys', () => {
         `${file} is exempted but no longer contains a banned grey — drop the exemption`
       ).toBe(true);
     }
+  });
+});
+
+describe('components do not hardcode colour literals', () => {
+  // The raw-grey guard above only reads `className`. Colour set through SVG
+  // presentation attributes or an inline style never appears there, so it was
+  // invisible to it — `AnchorProfile`'s history chart carried a hardcoded
+  // `rgb(59,130,246)` (Tailwind blue-500) through a full tokenisation pass with
+  // the suite green the whole time. Palette changes silently skipped it.
+  //
+  // Colour belongs to the theme. In SVG, reach it with `currentColor` plus a
+  // text utility, or `var(--color-*)` directly.
+  const COLOUR_ATTR =
+    /(?:stopColor|fill|stroke|color|floodColor|lightingColor)=["'](?:#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/;
+  const INLINE_STYLE_COLOUR = /style=\{\{[^}]*(?:#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\()/;
+
+  const files = [...tsxFiles('components'), ...tsxFiles('app')].filter(
+    (f) => !f.endsWith('.test.tsx')
+  );
+
+  it('scans a non-trivial number of files', () => {
+    expect(files.length).toBeGreaterThan(50);
+  });
+
+  it.each(files)('%s uses theme colour, not a literal', (file) => {
+    const offenders = readFileSync(file, 'utf8')
+      .split('\n')
+      .map((line, i) => ({ line, n: i + 1 }))
+      .filter(({ line }) => COLOUR_ATTR.test(line) || INLINE_STYLE_COLOUR.test(line));
+
+    expect(
+      offenders.map(({ n, line }) => `${file}:${n} ${line.trim()}`).join('\n'),
+      `${file} hardcodes a colour literal — use currentColor with a text utility, or var(--color-*)`
+    ).toBe('');
   });
 });
 

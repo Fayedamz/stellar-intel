@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { inter } from './fonts';
+import { archivo, splineSansMono } from './fonts';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ThemeProvider } from '@/contexts/theme';
@@ -13,9 +13,14 @@ import { ToastPortal } from '@/components/ui/Toast';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://stellar-intel.vercel.app';
 const SITE_NAME = 'Stellar Intel';
-const SITE_TITLE = 'Stellar Intel — The execution layer for stablecoin off-ramps';
+// docs/POSITIONING.md retires "the execution layer for stablecoin value on
+// Stellar" by name, along with the claim of live SEP-38 quotes across every
+// integrated anchor. Both survived here and in the OG card, which is the one
+// place a stale claim travels furthest. The title now leads with the half that
+// works without anyone's cooperation.
+const SITE_TITLE = 'Stellar Intel — a public health record for Stellar off-ramp anchors';
 const SITE_DESCRIPTION =
-  'Compare live SEP-38 quotes across every Stellar anchor, then settle a non-custodial USDC off-ramp to Nigeria, Kenya, Ghana, Mexico, and more — in a single signed intent.';
+  'Every registered Stellar off-ramp anchor, probed every five minutes across four signals — uptime, quote availability, issuer mismatch, TOML integrity — with the scoring method published and small samples labelled as small.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -83,11 +88,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body
-        className={`${inter.variable} ${inter.className} flex min-h-screen flex-col bg-background`}
+        className={`${archivo.variable} ${splineSansMono.variable} ${archivo.className} flex min-h-screen flex-col bg-background text-primary-text`}
       >
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:text-black"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded focus:border-control-border focus:bg-bg-subtle focus:text-primary-text focus:border focus:px-4 focus:py-2"
         >
           Skip to content
         </a>
@@ -97,7 +102,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <TestnetBanner />
               <OfflineBar />
               <Header />
-              <main id="main-content" className="mx-auto max-w-7xl px-4 py-8">
+              {/* `min-w-0` is load-bearing. <main> is a flex item of the body
+                  column, and a flex item defaults to `min-width: auto`, so it
+                  refuses to shrink below the intrinsic width of its widest
+                  child. Any wide table then pushes the whole page sideways at
+                  390px and no `overflow-x-auto` inside can contain it, because
+                  the scroll container itself is being stretched. */}
+              <main id="main-content" className="mx-auto w-full max-w-7xl min-w-0 px-4 py-8">
                 {children}
               </main>
               <Footer />

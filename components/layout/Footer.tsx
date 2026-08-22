@@ -56,7 +56,7 @@ export function Footer() {
           {FOOTER_COLUMNS.map((column) => (
             <div key={column.title} className="space-y-3">
               <h2 className="text-sm font-semibold text-primary-text">{column.title}</h2>
-              <ul className="space-y-2">
+              <ul>
                 {column.links.map((link) => (
                   <li key={link.href}>
                     {'external' in link && link.external ? (
@@ -64,14 +64,14 @@ export function Footer() {
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-secondary-text transition-colors hover:text-primary-text"
+                        className="text-secondary-text hover:text-primary-text focus-visible:ring-accent focus-visible:ring-offset-background inline-flex min-h-11 items-center rounded-sm text-sm transition-colors duration-100 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                       >
                         {link.label}
                       </a>
                     ) : (
                       <Link
                         href={link.href}
-                        className="text-sm text-secondary-text transition-colors hover:text-primary-text"
+                        className="text-secondary-text hover:text-primary-text focus-visible:ring-accent focus-visible:ring-offset-background inline-flex min-h-11 items-center rounded-sm text-sm transition-colors duration-100 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                       >
                         {link.label}
                       </Link>

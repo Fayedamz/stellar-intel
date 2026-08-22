@@ -131,11 +131,11 @@ function EndpointCard({
   const [idempotencyKey, setIdempotencyKey] = useState('');
 
   const methodColors: Record<string, string> = {
-    get: 'bg-green-600',
-    post: 'bg-blue-600',
-    put: 'bg-orange-600',
-    delete: 'bg-red-600',
-    patch: 'bg-purple-600',
+    get: 'bg-control-border',
+    post: 'bg-control-border',
+    put: 'bg-control-border',
+    delete: 'bg-status-down',
+    patch: 'bg-control-border',
   };
 
   const hasBody = method === 'post' || method === 'put' || method === 'patch';
@@ -209,7 +209,7 @@ function EndpointCard({
         className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-bg-subtle transition-colors"
       >
         <span
-          className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold text-white ${methodColors[method] || 'bg-gray-600'}`}
+          className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-bold text-white ${methodColors[method] || 'bg-bg-sunken'}`}
         >
           {method.toUpperCase()}
         </span>
@@ -238,7 +238,7 @@ function EndpointCard({
                     <span className="text-secondary-text">
                       {String((param.schema as { type?: string }).type ?? 'string')}
                     </span>
-                    {param.required && <span className="text-red-500">required</span>}
+                    {param.required && <span className="text-status-down">required</span>}
                     {param.description && (
                       <span className="text-secondary-text">— {param.description}</span>
                     )}
@@ -253,7 +253,7 @@ function EndpointCard({
               <button
                 type="button"
                 onClick={() => setShowTryIt(!showTryIt)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-background hover:bg-accent/90 transition-colors"
               >
                 <Play className="h-3 w-3" />
                 {showTryIt ? 'Hide' : 'Try it'}
@@ -269,7 +269,7 @@ function EndpointCard({
                 {environment.id === 'production' && WRITE_METHODS.has(method) && (
                   <div
                     role="alert"
-                    className="rounded-lg border border-amber-400 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+                    className="rounded-lg border border-status-unknown/40 bg-bg-sunken p-3 text-xs text-status-unknown"
                   >
                     <strong>This is a live {method.toUpperCase()} against production.</strong> It is
                     not a dry run — the effects are real. Switch the environment above to send it
@@ -344,7 +344,7 @@ function EndpointCard({
                     <textarea
                       value={body}
                       onChange={(e) => setBody(e.target.value)}
-                      className="w-full rounded-lg border border-border bg-gray-950 p-3 font-mono text-xs text-gray-100"
+                      className="w-full rounded-lg border border-border bg-background p-3 font-mono text-xs text-primary-text"
                       rows={8}
                     />
                   </div>
@@ -354,7 +354,7 @@ function EndpointCard({
                   type="button"
                   onClick={handleTryIt}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background hover:bg-accent/90 disabled:opacity-50 transition-colors"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -365,7 +365,7 @@ function EndpointCard({
                 </button>
 
                 {error && (
-                  <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
+                  <div className="rounded-lg border border-status-down/40 bg-bg-sunken p-3 text-sm text-status-down /50">
                     {error}
                   </div>
                 )}
@@ -377,14 +377,14 @@ function EndpointCard({
                       <span
                         className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${
                           response.status < 400
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            ? 'bg-accent-subtle text-status-up  '
+                            : 'bg-bg-sunken text-status-down  '
                         }`}
                       >
                         {response.status}
                       </span>
                     </div>
-                    <pre className="overflow-x-auto rounded-lg border border-border bg-gray-950 p-3 text-xs text-gray-100">
+                    <pre className="overflow-x-auto rounded-lg border border-border bg-background p-3 text-xs text-primary-text">
                       <code>{response.data}</code>
                     </pre>
                   </div>
@@ -437,7 +437,7 @@ export default function ApiPlayground() {
 
   if (error || !spec) {
     return (
-      <div className="rounded-xl border border-red-300 bg-red-50 p-6 text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
+      <div className="rounded-xl border border-status-down/40 bg-bg-sunken p-6 text-status-down /50">
         Failed to load API spec: {error}
       </div>
     );

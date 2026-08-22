@@ -16,7 +16,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       <button
         type="button"
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white shadow-lg md:hidden"
+        className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-background md:hidden"
       >
         <BookOpen className="h-4 w-4" />
         Docs Menu
