@@ -37,7 +37,7 @@ export function Tooltip({ content, children, className }: TooltipProps) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onKeyDown={handleKeyDown}
-        className="inline-flex cursor-help items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="inline-flex cursor-help items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         {children}
       </span>
@@ -45,7 +45,7 @@ export function Tooltip({ content, children, className }: TooltipProps) {
         <span
           role="tooltip"
           id={tooltipId}
-          className="absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-3 text-xs leading-relaxed text-gray-700 shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          className="absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-lg border border-border bg-bg-subtle p-3 text-xs leading-relaxed text-secondary-text"
         >
           {content}
         </span>

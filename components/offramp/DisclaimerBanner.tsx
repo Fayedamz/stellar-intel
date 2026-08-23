@@ -33,12 +33,12 @@ export function DisclaimerBanner() {
   if (!visible) return null;
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
+    <div className="flex items-start justify-between gap-3 rounded-xl border border-border bg-bg-sunken px-4 py-3 text-xs text-secondary-text /50 dark:text-fg-muted">
       <p>
         {DISCLAIMER_TEXT}{' '}
         <Link
           href={TERMS_HREF}
-          className="underline underline-offset-2 hover:text-gray-900 dark:hover:text-gray-200"
+          className="underline underline-offset-2 hover:text-primary-text dark:hover:text-secondary-text"
         >
           Terms
         </Link>
@@ -46,7 +46,7 @@ export function DisclaimerBanner() {
       <button
         onClick={handleDismiss}
         aria-label="Dismiss disclaimer"
-        className="flex-shrink-0 rounded p-0.5 text-secondary-text hover:text-gray-600 dark:hover:text-gray-200"
+        className="flex-shrink-0 rounded p-0.5 text-secondary-text hover:text-secondary-text dark:hover:text-secondary-text"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path

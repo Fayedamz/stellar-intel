@@ -13,7 +13,7 @@ export function Sparkline({
   data,
   width = 120,
   height = 24,
-  className = 'text-blue-500 dark:text-blue-400',
+  className = 'text-accent dark:text-accent',
 }: SparklineProps) {
   const gradientId = useId();
 
@@ -25,7 +25,7 @@ export function Sparkline({
         viewBox={`0 0 ${width} ${height}`}
         /* Decorative empty-state baseline: aria-hidden and carrying no
            information, so exempt from the contrast requirement (#755). */
-        className={`text-gray-300 dark:text-gray-700 ${className}`}
+        className={`text-secondary-text dark:text-secondary-text ${className}`}
         aria-hidden="true"
         data-testid="sparkline-empty"
       >

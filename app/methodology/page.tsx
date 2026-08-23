@@ -22,7 +22,7 @@ export const metadata: Metadata = {
         url: new URL('/opengraph-image', SITE_URL).toString(),
         width: 1200,
         height: 630,
-        alt: 'Stellar Intel — The execution layer for stablecoin off-ramps',
+        alt: 'Stellar Intel — a public health record for Stellar off-ramp anchors',
       },
     ],
   },

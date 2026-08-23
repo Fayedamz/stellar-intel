@@ -48,7 +48,7 @@ npx tsx scripts/mcp/server.ts`}
 
         <div className="rounded-xl border border-border p-5">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-primary-text">
-            <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+            <span className="rounded bg-accent-subtle px-2 py-0.5 text-xs font-medium text-accent">
               TOOL
             </span>
             intel.offramp.quote
@@ -89,7 +89,7 @@ npx tsx scripts/mcp/server.ts`}
 
         <div className="rounded-xl border border-border p-5">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-primary-text">
-            <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+            <span className="rounded bg-accent-subtle px-2 py-0.5 text-xs font-medium text-accent">
               TOOL
             </span>
             intel.offramp.prepare

@@ -170,7 +170,7 @@ export function RateTable({
     (!rates || (rates.rates.length === 0 && !rates.pending?.length))
   ) {
     return (
-      <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="overflow-hidden rounded-xl border border-border">
         <Skeleton rows={5} />
       </div>
     );
@@ -185,24 +185,21 @@ export function RateTable({
       : 'Off-ramp rates';
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+    <div className="overflow-hidden rounded-xl border border-border">
       <div aria-live="polite" aria-atomic="false" className="sr-only">
         {announcement}
       </div>
       <table className="w-full text-sm">
         <caption className="sr-only">{captionText}</caption>
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-            <th
-              scope="col"
-              className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400"
-            >
+          <tr className="border-b border-border bg-bg-sunken /50">
+            <th scope="col" className="px-4 py-3 text-left font-medium text-secondary-text">
               Anchor
             </th>
             <th
               scope="col"
               aria-sort={ariaSortFor(sort, 'reputation')}
-              className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+              className="px-4 py-3 text-right font-medium text-secondary-text"
             >
               <SortToggle
                 label="Reputation"
@@ -213,7 +210,7 @@ export function RateTable({
             <th
               scope="col"
               aria-sort={ariaSortFor(sort, 'fee')}
-              className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+              className="px-4 py-3 text-right font-medium text-secondary-text"
             >
               <SortToggle
                 label="Fee"
@@ -224,7 +221,7 @@ export function RateTable({
             <th
               scope="col"
               aria-sort={ariaSortFor(sort, 'rate')}
-              className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+              className="px-4 py-3 text-right font-medium text-secondary-text"
             >
               <SortToggle
                 label="Rate"
@@ -235,7 +232,7 @@ export function RateTable({
             <th
               scope="col"
               aria-sort={ariaSortFor(sort, 'receive')}
-              className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
+              className="px-4 py-3 text-right font-medium text-secondary-text"
             >
               <SortToggle
                 label="You Receive"
@@ -243,10 +240,7 @@ export function RateTable({
                 onClick={() => applySort('receive')}
               />
             </th>
-            <th
-              scope="col"
-              className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400"
-            >
+            <th scope="col" className="px-4 py-3 text-right font-medium text-secondary-text">
               Action
             </th>
           </tr>
@@ -255,10 +249,10 @@ export function RateTable({
           {!isLoading && error && (
             <tr>
               <td colSpan={6} className="px-4 py-8 text-center">
-                <p className="mb-3 text-sm text-red-500">{error}</p>
+                <p className="mb-3 text-sm text-status-down">{error}</p>
                 <button
                   onClick={() => window.location.reload()}
-                  className="text-xs font-medium text-blue-600 underline hover:text-blue-700"
+                  className="text-xs font-medium text-accent underline hover:text-accent"
                 >
                   Retry
                 </button>
@@ -274,26 +268,26 @@ export function RateTable({
             (!rates.pending || rates.pending.length === 0) && (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <p className="text-sm font-medium text-secondary-text">
                     No rates available
                     {sourceCurrency && destCurrency
                       ? ` for ${sourceCurrency.toUpperCase()}→${destCurrency.toUpperCase()} right now.`
                       : ' for this corridor right now.'}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 text-xs text-fg-muted">
                     Anchors may be temporarily unavailable. Rates refresh every 30 seconds.
                   </p>
                   <div className="mt-4 flex items-center justify-center gap-3">
                     <a
                       href="#corridor-select"
-                      className="text-xs font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-400"
+                      className="text-xs font-medium text-accent underline hover:text-accent dark:text-accent"
                     >
                       Try another corridor
                     </a>
                     {onRefresh && (
                       <button
                         onClick={onRefresh}
-                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                        className="rounded-lg border border-control-border px-3 py-1.5 text-xs font-medium text-secondary-text hover:bg-bg-sunken dark:hover:bg-bg-sunken"
                       >
                         Refresh now
                       </button>
@@ -317,8 +311,8 @@ export function RateTable({
                   <tr
                     className={
                       isBest
-                        ? 'border-t border-t-blue-200 border-l-[3px] border-l-green-500 bg-blue-50/50 transition-[filter] duration-[120ms] ease-out hover:brightness-[0.98] dark:border-t-blue-900 dark:border-l-green-400 dark:bg-blue-950/20 dark:hover:brightness-110'
-                        : 'border-t border-gray-200 transition-colors duration-[120ms] ease-out hover:bg-black/[0.03] dark:border-gray-700 dark:hover:bg-white/5'
+                        ? 'border-t border-t-blue-200 border-l-[3px] border-l-green-500 bg-accent-subtle/50 transition-[filter] duration-[120ms] ease-out hover:brightness-[0.98] dark:border-t-blue-900 dark:border-l-green-400  dark:hover:brightness-110'
+                        : 'border-t border-border transition-colors duration-[120ms] ease-out hover:bg-black/[0.03]  dark:hover:bg-bg-subtle/5'
                     }
                   >
                     <td className="px-4 py-3">
@@ -326,25 +320,25 @@ export function RateTable({
                         <AnchorLogo anchorId={rate.anchorId} anchorName={rate.anchorName} />
                         <Link
                           href={`/anchors/${rate.anchorId}`}
-                          className="font-medium text-gray-900 hover:underline dark:text-white"
+                          className="font-medium text-primary-text hover:underline"
                         >
                           {rate.anchorName}
                         </Link>
                         {isBest && (
                           <>
-                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                            <span className="rounded-full bg-accent-subtle px-2 py-0.5 text-xs font-medium text-accent">
                               Best Rate
                             </span>
                             {isIndicativeRateSource(rate.source) && (
                               <span
-                                className="text-xs text-gray-500 dark:text-gray-400"
+                                className="text-xs text-fg-muted"
                                 title="This anchor's rate is an estimate, not a firm quote — it may change before you withdraw."
                               >
                                 based on an indicative rate
                               </span>
                             )}
                             {savingsVsWorst !== null && savingsVsWorst > 0 && (
-                              <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                              <span className="text-xs font-medium text-status-up">
                                 Save {formatCurrency(savingsVsWorst, currency)} vs others
                               </span>
                             )}
@@ -352,8 +346,8 @@ export function RateTable({
                               <span
                                 className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                   volatilityDirection === 'up'
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                                    : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                                    ? 'bg-accent-subtle text-status-up  '
+                                    : 'bg-bg-sunken text-status-down  '
                                 }`}
                               >
                                 Rate moving {volatilityDirection === 'up' ? '↑' : '↓'}
@@ -379,10 +373,10 @@ export function RateTable({
                           title={`Reputation score: ${((rate.reputationScore ?? 0) * 100).toFixed(1)}%`}
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                             rate.reputationRank === 1
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                              ? 'bg-bg-sunken text-status-unknown  '
                               : rate.reputationRank <= 3
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                                ? 'bg-accent-subtle text-status-up  '
+                                : 'bg-bg-sunken text-secondary-text  '
                           }`}
                         >
                           #{rate.reputationRank}
@@ -391,10 +385,10 @@ export function RateTable({
                         <span className="text-secondary-text">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-3 text-right text-secondary-text">
                       {rate.fee !== null ? formatCurrency(rate.fee, 'USD') : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                    <td className="px-4 py-3 text-right text-secondary-text">
                       {rate.exchangeRate !== null && rate.exchangeRate > 0
                         ? formatRate(rate.exchangeRate, 'USDC', currency)
                         : '—'}
@@ -424,7 +418,7 @@ export function RateTable({
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
+                    <td className="px-4 py-3 text-right font-medium text-primary-text">
                       {rate.totalReceived !== null
                         ? formatCurrency(rate.totalReceived, currency)
                         : '—'}
@@ -435,7 +429,7 @@ export function RateTable({
                           onClick={() => setExpandedAnchorId(isExpanded ? null : rate.anchorId)}
                           aria-label={isExpanded ? 'Hide details' : 'Show details'}
                           aria-expanded={isExpanded}
-                          className="rounded p-1 text-secondary-text hover:text-gray-600 dark:hover:text-gray-200"
+                          className="rounded p-1 text-secondary-text hover:text-secondary-text dark:hover:text-secondary-text"
                         >
                           <svg
                             className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -451,7 +445,7 @@ export function RateTable({
                         <button
                           onClick={() => onSelectAnchor(rate)}
                           disabled={isUnavailable || executeDisabled}
-                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-background transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           Off-ramp
                         </button>
@@ -468,7 +462,7 @@ export function RateTable({
             anchorErrors.map((anchorError) => (
               <tr
                 key={`error-${anchorError.anchorId}`}
-                className="border-t border-gray-200 dark:border-gray-700 opacity-50"
+                className="border-t border-border opacity-50"
                 title={anchorError.reason}
                 aria-label={`${anchorError.anchorName} unavailable: ${anchorError.reason}`}
               >
@@ -496,7 +490,7 @@ export function RateTable({
                     disabled
                     aria-disabled="true"
                     title={anchorError.reason}
-                    className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                    className="rounded-lg bg-bg-sunken px-3 py-1.5 text-xs font-medium text-fg-muted cursor-not-allowed dark:text-fg-muted"
                   >
                     Unavailable
                   </button>
@@ -509,7 +503,7 @@ export function RateTable({
             rates?.pending?.map((pendingAnchor) => (
               <tr
                 key={`pending-${pendingAnchor.anchorId}`}
-                className="border-t border-gray-200 dark:border-gray-700 opacity-60"
+                className="border-t border-border opacity-60"
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -517,24 +511,26 @@ export function RateTable({
                       anchorId={pendingAnchor.anchorId}
                       anchorName={pendingAnchor.anchorName}
                     />
-                    <span className="font-medium text-gray-900 dark:text-white">
+                    <span className="font-medium text-primary-text">
                       {pendingAnchor.anchorName}
                     </span>
-                    <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300">
+                    <span className="rounded-full bg-bg-sunken px-2 py-0.5 text-xs font-medium text-status-unknown">
                       Fetching...
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">—</td>
-                <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">—</td>
-                <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">—</td>
-                <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
-                  —
-                </td>
+                <td className="px-4 py-3 text-right text-secondary-text">—</td>
+                <td className="px-4 py-3 text-right text-secondary-text">—</td>
+                <td className="px-4 py-3 text-right text-secondary-text">—</td>
+                <td className="px-4 py-3 text-right font-medium text-primary-text">—</td>
                 <td className="px-4 py-3 text-right">
+                  {/* bg-sunken, not border: --border is a divider token and
+                      tests/contrast.spec.ts exempts it from the contrast matrix
+                      on the grounds that no control uses it. As a fill behind
+                      white it measured 1.43:1 in the light theme. */}
                   <button
                     disabled
-                    className="rounded-lg bg-gray-300 px-3 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed dark:bg-gray-700"
+                    className="rounded-lg bg-bg-sunken px-3 py-1.5 text-xs font-medium text-secondary-text disabled:cursor-not-allowed"
                   >
                     Pending
                   </button>

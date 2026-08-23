@@ -69,13 +69,10 @@ export function Sep6KycForm({ schema, onSubmit, onCancel }: Sep6KycFormProps) {
 
         return (
           <div key={field.key} className="flex flex-col gap-1">
-            <label
-              htmlFor={fieldId}
-              className="text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
+            <label htmlFor={fieldId} className="text-sm font-medium text-secondary-text">
               {field.label}
               {field.required && (
-                <span className="ml-1 text-red-500" aria-hidden="true">
+                <span className="ml-1 text-status-down" aria-hidden="true">
                   *
                 </span>
               )}
@@ -89,10 +86,8 @@ export function Sep6KycForm({ schema, onSubmit, onCancel }: Sep6KycFormProps) {
                 aria-required={field.required}
                 aria-describedby={error ? errorId : undefined}
                 aria-invalid={!!error}
-                className={`rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white ${
-                  error
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
+                className={`rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent ${
+                  error ? 'border-status-down/40 focus:ring-status-down' : 'border-control-border'
                 }`}
               >
                 <option value="">Select…</option>
@@ -111,16 +106,14 @@ export function Sep6KycForm({ schema, onSubmit, onCancel }: Sep6KycFormProps) {
                 aria-required={field.required}
                 aria-describedby={error ? errorId : undefined}
                 aria-invalid={!!error}
-                className={`rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white ${
-                  error
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 dark:border-gray-600'
+                className={`rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent ${
+                  error ? 'border-status-down/40 focus:ring-status-down' : 'border-control-border'
                 }`}
               />
             )}
 
             {error && (
-              <p id={errorId} role="alert" className="text-xs text-red-500">
+              <p id={errorId} role="alert" className="text-xs text-status-down">
                 {error}
               </p>
             )}
@@ -129,7 +122,7 @@ export function Sep6KycForm({ schema, onSubmit, onCancel }: Sep6KycFormProps) {
       })}
 
       {submitError && (
-        <p role="alert" className="text-sm text-red-500">
+        <p role="alert" className="text-sm text-status-down">
           {submitError}
         </p>
       )}
@@ -138,7 +131,7 @@ export function Sep6KycForm({ schema, onSubmit, onCancel }: Sep6KycFormProps) {
         <button
           type="submit"
           disabled={submitting || hasErrors}
-          className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? 'Submitting…' : 'Submit'}
         </button>
@@ -146,7 +139,7 @@ export function Sep6KycForm({ schema, onSubmit, onCancel }: Sep6KycFormProps) {
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="flex-1 rounded-lg border border-control-border px-4 py-2 text-sm font-medium text-secondary-text transition-colors hover:bg-bg-sunken focus:outline-none focus:ring-2 focus:ring-control-border focus:ring-offset-2 disabled:opacity-50 dark:hover:bg-bg-sunken"
         >
           Cancel
         </button>

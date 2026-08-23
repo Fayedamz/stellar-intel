@@ -528,7 +528,7 @@ function ExecuteDrawerContent({
         aria-label="Execute off-ramp"
         data-dragging={dragOffset > 0 ? 'true' : undefined}
         style={dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
-        className={`bottom-sheet fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-white shadow-2xl transition-transform duration-300 dark:bg-gray-900 lg:bottom-auto lg:left-1/2 lg:right-auto lg:top-1/2 lg:w-full lg:max-w-[480px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl ${
+        className={`bottom-sheet fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-bg-subtle transition-transform duration-300 lg:bottom-auto lg:left-1/2 lg:right-auto lg:top-1/2 lg:w-full lg:max-w-[480px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl ${
           isOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-full'
         }`}
       >
@@ -541,21 +541,21 @@ function ExecuteDrawerContent({
         >
           <span
             aria-hidden="true"
-            className="h-1.5 w-10 rounded-full bg-gray-300 dark:bg-gray-600"
+            className="h-1.5 w-10 rounded-full bg-border dark:bg-bg-sunken"
           />
         </div>
 
         <div className="px-6 pb-6 pt-4 sm:p-6">
           {/* Header */}
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-primary-text">
               Off-ramp via {rate?.anchorName ?? ''}
             </h2>
             <button
               onClick={onClose}
               disabled={isRunning}
               aria-label="Close"
-              className="rounded-lg p-1 text-secondary-text hover:text-gray-600 disabled:opacity-40 dark:hover:text-gray-200"
+              className="rounded-lg p-1 text-secondary-text hover:text-secondary-text disabled:opacity-40 dark:hover:text-secondary-text"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -570,26 +570,26 @@ function ExecuteDrawerContent({
 
           {/* Summary */}
           {rate && (
-            <div className="mb-5 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+            <div className="mb-5 rounded-xl border border-border p-4">
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">You send</dt>
-                  <dd className="font-medium text-gray-900 dark:text-white">{amount} USDC</dd>
+                  <dt className="text-fg-muted">You send</dt>
+                  <dd className="font-medium text-primary-text">{amount} USDC</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Fee</dt>
-                  <dd className="text-gray-700 dark:text-gray-300">{rate.fee} USDC</dd>
+                  <dt className="text-fg-muted">Fee</dt>
+                  <dd className="text-secondary-text">{rate.fee} USDC</dd>
                 </div>
-                <div className="flex justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
-                  <dt className="font-medium text-gray-700 dark:text-gray-300">You receive</dt>
-                  <dd className="font-semibold text-green-600 dark:text-green-400">
+                <div className="flex justify-between border-t border-border pt-2">
+                  <dt className="font-medium text-secondary-text">You receive</dt>
+                  <dd className="font-semibold text-status-up">
                     {(rate.totalReceived ?? 0).toLocaleString()}{' '}
                     {rate.corridorId.split('-')[1]?.toUpperCase()}
                   </dd>
                 </div>
                 {firmQuote && (
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
-                    <dt className="text-gray-500">Price</dt>
+                  <div className="flex items-center justify-between border-t border-border pt-2">
+                    <dt className="text-fg-muted">Price</dt>
                     <dd>
                       <QuotePill
                         source="sep38"
@@ -620,10 +620,8 @@ function ExecuteDrawerContent({
 
           {/* SEP-6 form placeholder — shown when anchor uses programmatic KYC */}
           {step === 'form' && (
-            <div className="mb-5 rounded-xl border border-gray-200 p-4 text-center dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                SEP-6 form flow — coming soon
-              </p>
+            <div className="mb-5 rounded-xl border border-border p-4 text-center">
+              <p className="text-sm text-secondary-text">SEP-6 form flow — coming soon</p>
             </div>
           )}
 
@@ -632,14 +630,14 @@ function ExecuteDrawerContent({
 
           {/* Error message */}
           {step === 'error' && errorMsg && (
-            <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
+            <p className="mt-3 rounded-lg bg-bg-sunken px-3 py-2 text-sm text-status-down">
               {errorMsg}
             </p>
           )}
 
           {/* Success — tx hash */}
           {step === 'done' && txHash && (
-            <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-xs font-mono text-green-700 dark:bg-green-950/30 dark:text-green-400">
+            <p className="mt-3 rounded-lg bg-accent-subtle px-3 py-2 text-xs font-mono text-status-up">
               {txHash}
             </p>
           )}
@@ -650,7 +648,7 @@ function ExecuteDrawerContent({
               {step === 'form' && (
                 <button
                   onClick={onClose}
-                  className="w-full rounded-xl bg-gray-100 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                  className="w-full rounded-xl bg-bg-sunken py-3 text-sm font-semibold text-primary-text transition-colors hover:bg-bg-sunken dark:hover:bg-bg-sunken"
                 >
                   Continue
                 </button>
@@ -659,12 +657,12 @@ function ExecuteDrawerContent({
                 <div className="flex flex-col items-center">
                   <button
                     onClick={handleExecute}
-                    className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-background transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
                   >
                     {FLAGS.INTENT_FLOW ? 'Sign intent' : 'Start Off-ramp'}
                   </button>
                   {FLAGS.INTENT_FLOW && (
-                    <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-2 text-center text-xs text-fg-muted">
                       One signature, any outcome.
                     </p>
                   )}
@@ -673,7 +671,7 @@ function ExecuteDrawerContent({
               {isRunning && (
                 <button
                   disabled
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white opacity-75"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3 text-sm font-semibold text-background opacity-75"
                 >
                   <Spinner />
                   {STEP_LABELS[step]}
@@ -682,7 +680,7 @@ function ExecuteDrawerContent({
               {step === 'error' && (
                 <button
                   onClick={errorIsRetryable ? handleExecute : handleStartOver}
-                  className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                  className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-background transition-colors hover:opacity-90"
                 >
                   {errorIsRetryable ? 'Retry' : 'Start Over'}
                 </button>
@@ -690,7 +688,7 @@ function ExecuteDrawerContent({
               {step === 'done' && (
                 <button
                   onClick={onClose}
-                  className="w-full rounded-xl bg-gray-100 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                  className="w-full rounded-xl bg-bg-sunken py-3 text-sm font-semibold text-primary-text transition-colors hover:bg-bg-sunken dark:hover:bg-bg-sunken"
                 >
                   Close
                 </button>
@@ -714,25 +712,23 @@ function ExecuteDrawerContent({
             role="dialog"
             aria-modal="true"
             aria-label="Cancel off-ramp?"
-            className="relative z-10 mx-4 max-w-sm rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800"
+            className="relative z-10 mx-4 max-w-sm rounded-lg bg-bg-subtle p-6"
           >
-            <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              Cancel Off-ramp?
-            </h3>
-            <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+            <h3 className="mb-2 text-lg font-semibold text-primary-text">Cancel Off-ramp?</h3>
+            <p className="mb-6 text-sm text-secondary-text">
               Are you sure you want to cancel the off-ramp process? This will close the KYC form and
               you&apos;ll need to start over.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={handleCancelClose}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="flex-1 rounded-lg border border-control-border px-4 py-2 text-sm font-medium text-secondary-text transition-colors hover:bg-bg-sunken dark:hover:bg-bg-sunken"
               >
                 Keep Going
               </button>
               <button
                 onClick={handleConfirmClose}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="flex-1 rounded-lg bg-status-down px-4 py-2 text-sm font-medium text-background transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-status-down focus:ring-offset-2"
               >
                 Cancel Process
               </button>
@@ -768,28 +764,26 @@ function ExecuteDrawerErrorFallback({
         role="dialog"
         aria-modal="true"
         aria-label="Off-ramp error"
-        className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-white shadow-2xl transition-transform duration-300 dark:bg-gray-900 lg:bottom-auto lg:left-1/2 lg:right-auto lg:top-1/2 lg:w-full lg:max-w-[480px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl ${
+        className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-bg-subtle transition-transform duration-300 lg:bottom-auto lg:left-1/2 lg:right-auto lg:top-1/2 lg:w-full lg:max-w-[480px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl ${
           isOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-full'
         }`}
       >
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Off-ramp unavailable
-          </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <h2 className="text-lg font-semibold text-primary-text">Off-ramp unavailable</h2>
+          <p className="mt-2 text-sm text-secondary-text">
             We could not render the {anchorName ? `${anchorName} ` : ''}off-ramp flow.
           </p>
 
           <div className="mt-5 space-y-3">
             <button
               onClick={onRetry}
-              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-background transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
             >
               Retry
             </button>
             <button
               onClick={onChooseDifferentAnchor}
-              className="w-full rounded-xl bg-gray-100 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+              className="w-full rounded-xl bg-bg-sunken py-3 text-sm font-semibold text-primary-text transition-colors hover:bg-bg-sunken dark:hover:bg-bg-sunken"
             >
               Choose different anchor
             </button>
@@ -831,10 +825,10 @@ function StepIndicator({ step }: { step: ExecuteDrawerStep }) {
                 exempt from WCAG 1.4.3, and the active step has to stand out (#755). */}
             <span
               className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold
-                ${isComplete ? 'bg-green-500 text-white' : ''}
-                ${isActive ? 'bg-blue-600 text-white animate-pulse' : ''}
-                ${isPending ? 'bg-gray-200 text-gray-400 dark:bg-gray-700' : ''}
-                ${step === 'done' ? 'bg-green-500 text-white' : ''}
+ ${isComplete ? 'bg-status-up text-white' : ''}
+                ${isActive ? 'bg-accent text-background animate-pulse' : ''}
+                ${isPending ? 'bg-bg-sunken text-fg-muted ' : ''}
+                ${step === 'done' ? 'bg-status-up text-white' : ''}
               `}
             >
               {isComplete || step === 'done' ? '✓' : thisIdx + 1}
@@ -842,9 +836,9 @@ function StepIndicator({ step }: { step: ExecuteDrawerStep }) {
             <span
               className={
                 isActive
-                  ? 'font-medium text-blue-600 dark:text-blue-400'
+                  ? 'font-medium text-accent'
                   : isComplete || step === 'done'
-                    ? 'text-gray-500 line-through dark:text-gray-400'
+                    ? 'text-fg-muted line-through dark:text-fg-muted'
                     : 'text-secondary-text'
               }
             >

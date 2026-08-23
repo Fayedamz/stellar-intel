@@ -50,18 +50,18 @@ export function ConsentModal({ open, onAccept, onCancel }: ConsentModalProps) {
       aria-labelledby="consent-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
     >
-      <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
-        <h2 id="consent-title" className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className="w-full max-w-md space-y-4 rounded-2xl bg-bg-subtle p-6">
+        <h2 id="consent-title" className="text-lg font-semibold text-primary-text">
           Before you continue
         </h2>
 
-        <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+        <ul className="space-y-2 text-sm text-secondary-text">
           {DISCLAIMER_SENTENCES.map((sentence) => (
             <li key={sentence}>{sentence}</li>
           ))}
         </ul>
 
-        <label className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200">
+        <label className="flex items-start gap-2 text-sm text-primary-text">
           <input
             ref={checkboxRef}
             type="checkbox"
@@ -82,7 +82,7 @@ export function ConsentModal({ open, onAccept, onCancel }: ConsentModalProps) {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            className="rounded-xl px-4 py-2 text-sm font-medium text-secondary-text hover:text-primary-text dark:hover:text-white"
           >
             Cancel
           </button>
@@ -90,7 +90,7 @@ export function ConsentModal({ open, onAccept, onCancel }: ConsentModalProps) {
             type="button"
             onClick={onAccept}
             disabled={!checked}
-            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Accept and continue
           </button>

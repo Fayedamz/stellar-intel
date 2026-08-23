@@ -229,8 +229,8 @@ function OfframpContent() {
       </div>
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Off-ramp Comparator</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-primary-text">Off-ramp Comparator</h1>
+          <p className="mt-1 text-sm text-fg-muted">
             Compare USDC withdrawal rates across Stellar anchors in real time
           </p>
         </div>
@@ -239,7 +239,7 @@ function OfframpContent() {
 
       <DisclaimerBanner />
 
-      <div className="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 rounded-xl border border-border bg-bg-sunken p-4 /50 sm:grid-cols-2">
         <CorridorSelector value={corridorId} onChange={handleCorridorChange} />
         <AmountInput
           value={amount}
@@ -251,7 +251,7 @@ function OfframpContent() {
       </div>
 
       {!isConnected && (
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-800/40 dark:bg-yellow-950/20 dark:text-yellow-300">
+        <div className="rounded-xl border border-status-unknown/40 bg-bg-sunken px-4 py-3 text-sm text-status-unknown /40">
           Connect your Freighter wallet to execute an off-ramp.
         </div>
       )}
@@ -276,13 +276,11 @@ function OfframpContent() {
         <ErrorBoundary
           resetKeys={[corridorId, amount]}
           fallback={({ resetErrorBoundary }) => (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-8 text-center dark:border-red-800/40 dark:bg-red-950/20">
-              <p className="mb-3 text-sm text-red-600 dark:text-red-400">
-                Rate table encountered an error.
-              </p>
+            <div className="rounded-xl border border-status-down/40 bg-bg-sunken px-4 py-8 text-center /40">
+              <p className="mb-3 text-sm text-status-down">Rate table encountered an error.</p>
               <button
                 onClick={resetErrorBoundary}
-                className="text-xs font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-400"
+                className="text-xs font-medium text-accent underline hover:text-accent dark:text-accent"
               >
                 Retry
               </button>

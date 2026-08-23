@@ -12,8 +12,8 @@ export default function ApiDocsPage() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/20">
-        <p className="text-sm text-amber-800 dark:text-amber-300">
+      <div className="rounded-xl border border-status-unknown/40 bg-bg-sunken p-4 /50">
+        <p className="text-sm text-status-unknown">
           <strong>Note:</strong> Some endpoints require authentication headers or specific
           parameters. See{' '}
           <a href="/docs/auth" className="underline">

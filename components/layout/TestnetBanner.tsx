@@ -9,7 +9,7 @@ export function TestnetBanner() {
   if (STELLAR_NETWORK !== 'testnet') return null;
 
   return (
-    <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-medium text-amber-950">
+    <div className="bg-status-unknown px-4 py-1.5 text-center text-xs font-medium text-background">
       ⚠ TESTNET — transactions do not use real funds
     </div>
   );

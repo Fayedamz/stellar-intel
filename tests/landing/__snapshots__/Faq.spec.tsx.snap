@@ -5,13 +5,13 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
   aria-labelledby="faq-heading"
 >
   <h2
-    class="mb-6 text-xl font-semibold text-gray-900 dark:text-white"
+    class="mb-6 text-xl font-semibold text-primary-text"
     id="faq-heading"
   >
     Frequently asked questions
   </h2>
   <dl
-    class="divide-y divide-gray-200 rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700"
+    class="divide-y divide-gray-200 rounded-xl border border-border dark:divide-gray-700"
   >
     <div>
       <dt
@@ -20,7 +20,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         <button
           aria-controls="faq-panel-0"
           aria-expanded="false"
-          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
           type="button"
         >
           <span>
@@ -28,7 +28,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -46,7 +46,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         </button>
       </dt>
       <dd
-        class="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+        class="px-5 pb-4 pt-0 text-sm text-secondary-text"
         hidden=""
         id="faq-panel-0"
       >
@@ -60,7 +60,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         <button
           aria-controls="faq-panel-1"
           aria-expanded="false"
-          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
           type="button"
         >
           <span>
@@ -68,7 +68,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -86,7 +86,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         </button>
       </dt>
       <dd
-        class="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+        class="px-5 pb-4 pt-0 text-sm text-secondary-text"
         hidden=""
         id="faq-panel-1"
       >
@@ -100,7 +100,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         <button
           aria-controls="faq-panel-2"
           aria-expanded="false"
-          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
           type="button"
         >
           <span>
@@ -108,7 +108,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -126,11 +126,11 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         </button>
       </dt>
       <dd
-        class="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+        class="px-5 pb-4 pt-0 text-sm text-secondary-text"
         hidden=""
         id="faq-panel-2"
       >
-        We compare live rates across every integrated anchor and rank by net landed value (rate − fees − slippage − historical fill-rate penalty), not headline rate — then let you execute in one click. Plus a public reputation oracle and an MCP agent surface. It's the execution layer, not just a price page.
+        An explorer tells you what settled on-chain. An anchor's own app tells you what that anchor says about itself. Neither answers "did this anchor respond on its endpoints this week, and does its stellar.toml still match what is on-chain" — that is the record we keep, on a five-minute clock, with the scoring method published and small samples labelled as small. The execution path is real and non-custodial, but the record is the half that works without anyone's cooperation.
       </dd>
     </div>
     <div>
@@ -140,7 +140,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         <button
           aria-controls="faq-panel-3"
           aria-expanded="false"
-          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
           type="button"
         >
           <span>
@@ -148,7 +148,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -166,7 +166,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         </button>
       </dt>
       <dd
-        class="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+        class="px-5 pb-4 pt-0 text-sm text-secondary-text"
         hidden=""
         id="faq-panel-3"
       >
@@ -180,7 +180,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         <button
           aria-controls="faq-panel-4"
           aria-expanded="false"
-          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
           type="button"
         >
           <span>
@@ -188,7 +188,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -206,7 +206,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         </button>
       </dt>
       <dd
-        class="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+        class="px-5 pb-4 pt-0 text-sm text-secondary-text"
         hidden=""
         id="faq-panel-4"
       >
@@ -220,7 +220,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         <button
           aria-controls="faq-panel-5"
           aria-expanded="false"
-          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
           type="button"
         >
           <span>
@@ -228,7 +228,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -246,7 +246,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         </button>
       </dt>
       <dd
-        class="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+        class="px-5 pb-4 pt-0 text-sm text-secondary-text"
         hidden=""
         id="faq-panel-5"
       >
@@ -260,7 +260,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         <button
           aria-controls="faq-panel-6"
           aria-expanded="false"
-          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
           type="button"
         >
           <span>
@@ -268,7 +268,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -286,7 +286,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         </button>
       </dt>
       <dd
-        class="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+        class="px-5 pb-4 pt-0 text-sm text-secondary-text"
         hidden=""
         id="faq-panel-6"
       >
@@ -300,7 +300,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         <button
           aria-controls="faq-panel-7"
           aria-expanded="false"
-          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600 dark:text-white dark:hover:bg-gray-800/60"
+          class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-primary-text hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent dark:hover:bg-bg-sunken/60"
           type="button"
         >
           <span>
@@ -308,7 +308,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400"
+            class="lucide lucide-chevron-down ml-4 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 dark:text-fg-muted"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -326,7 +326,7 @@ exports[`Faq > matches the visual snapshot in its default (all-closed) state 1`]
         </button>
       </dt>
       <dd
-        class="px-5 pb-4 pt-0 text-sm text-gray-600 dark:text-gray-400"
+        class="px-5 pb-4 pt-0 text-sm text-secondary-text"
         hidden=""
         id="faq-panel-7"
       >

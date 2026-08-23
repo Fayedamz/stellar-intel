@@ -16,15 +16,15 @@ const ANCHOR_ONBOARD_URL =
  */
 export function AnchorCta() {
   return (
-    <section className="rounded-xl border border-blue-200 bg-blue-50 p-6 text-center dark:border-blue-900 dark:bg-blue-950/30 sm:p-8">
-      <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+    <section className="rounded-xl border border-border bg-accent-subtle p-6 text-center sm:p-8">
+      <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-accent-subtle px-4 py-1.5 text-sm font-medium text-accent">
         <Anchor className="h-3.5 w-3.5" />
         For anchors
       </div>
-      <h2 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+      <h2 className="mb-2 text-2xl font-bold tracking-tight text-primary-text">
         Run a Stellar anchor?
       </h2>
-      <p className="mx-auto mb-6 max-w-xl text-gray-600 dark:text-gray-400">
+      <p className="mx-auto mb-6 max-w-xl text-secondary-text">
         Listing is carrot, not stick: no listing fee, no exclusivity, and we never custody user
         funds. We aggregate your quotes and publish your track record to a public Soroban oracle.
       </p>
@@ -32,7 +32,7 @@ export function AnchorCta() {
         href={ANCHOR_ONBOARD_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
+        className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
         List your anchor
         <ArrowUpRight className="h-4 w-4" />
