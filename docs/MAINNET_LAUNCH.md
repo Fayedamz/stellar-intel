@@ -42,10 +42,35 @@ Both would have been repeated on mainnet.
 | ≥90 days of probe samples                                          | preflight (queries `probe_samples`)     |
 | Deployed bytecode matches source                                   | preflight (entrypoint probe)            |
 | Admin ≠ upgrade admin                                              | preflight (`getOracleGovernance`)       |
+| Publisher ≠ admin                                                  | preflight (`Keypair.fromSecret`)        |
 | Anchor registry seeded                                             | preflight (`list_anchors`)              |
 | Security audit complete                                            | **manual** — #716/#717                  |
 | Keys in HSM/KMS per `docs/SECURITY.md`                             | **manual** — verify custody out of band |
 | Rollback rehearsed                                                 | **manual** — section 5                  |
+
+### Key model
+
+Three keys govern the contract. Each is a distinct Stellar account and none may
+be held by the same keypair as another.
+
+| Key               | What it controls                                                                                                                                                             | Allowed in a deployment environment                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Admin**         | Anchor registration, publisher authorization, and admin rotation (`propose_admin`/`accept_admin`). Operator-level changes to what the oracle covers and who can write to it. | No. Kept offline; used from an operator's machine only.                                       |
+| **Upgrade admin** | WASM upgrades via `init_upgrade`/`upgrade`. Can replace the contract entirely.                                                                                               | No. Kept offline; separate multisig from the admin.                                           |
+| **Publisher**     | Submits outcomes and rates (`submit_outcome`, `set_corridor_metrics`, `publish_corridor_rate`). No authority over the registry, other publishers, or the contract itself.    | Yes. `PUBLISHER_SECRET` in the Vercel production environment holds this key and nothing else. |
+
+The admin key carries considerably more authority than the publisher: it can
+authorize or revoke any writer, begin an admin rotation, and alter what anchors
+the oracle covers. A serverless runtime is a wide attack surface (env-var leak,
+SSRF, a compromised dependency, a stray log line). Publisher-level exposure is
+recoverable; admin-level exposure is not, because the admin can revoke and
+replace the publisher before the situation is understood.
+
+On testnet the admin and publisher share an account for convenience. That
+shortcut must not carry over. The preflight check `Publisher is not the contract
+admin` enforces this mechanically: it derives the public key from
+`PUBLISHER_SECRET` and fails if it matches `admin()` read from the deployed
+contract.
 
 ---
 
