@@ -1,5 +1,7 @@
 # Stellar Intel — MCP Server
 
+**Last reviewed:** 2026-08-26
+
 The MCP server exposes Stellar Intel's off-ramp routing to MCP-capable agents
 over stdio or streamable HTTP. It lives in
 [`scripts/mcp`](../scripts/mcp) (in-repo dev server) and
