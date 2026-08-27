@@ -51,7 +51,9 @@ function describeExecutionFailure(
     return 'The route failed for an unspecified reason.';
   }
 
-  const succeeded = completed.slice(0, -1).filter((r): r is Extract<HopExecutionResult, { ok: true }> => r.ok);
+  const succeeded = completed
+    .slice(0, -1)
+    .filter((r): r is Extract<HopExecutionResult, { ok: true }> => r.ok);
 
   const completedLines = succeeded.map((r) => {
     const kind = hopById.get(r.hopId)?.type ?? 'step';
@@ -60,7 +62,9 @@ function describeExecutionFailure(
   });
 
   const failedKind = hopById.get(failed.hopId)?.type;
-  const failedLabel = failedKind ? `The ${failedKind} step "${failed.hopId}"` : `Step "${failed.hopId}"`;
+  const failedLabel = failedKind
+    ? `The ${failedKind} step "${failed.hopId}"`
+    : `Step "${failed.hopId}"`;
   const reason = failed.details ? `${failed.error} (${failed.details})` : failed.error;
   const failedLine = `${failedLabel} failed: ${reason}.`;
 

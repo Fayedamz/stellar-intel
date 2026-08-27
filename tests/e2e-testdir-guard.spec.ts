@@ -19,8 +19,9 @@ const VITEST_IMPORT = /from\s+['"]vitest(\/[^'"]*)?['"]|require\(\s*['"]vitest(\
 
 describe('tests/e2e stays Playwright-only (#1030)', () => {
   it('has no *.spec.ts file that imports from vitest', () => {
-    const specFiles = readdirSync(E2E_DIR, { recursive: true })
-      .filter((entry): entry is string => typeof entry === 'string' && entry.endsWith('.spec.ts'));
+    const specFiles = readdirSync(E2E_DIR, { recursive: true }).filter(
+      (entry): entry is string => typeof entry === 'string' && entry.endsWith('.spec.ts')
+    );
 
     const offenders = specFiles.filter((file) =>
       VITEST_IMPORT.test(readFileSync(path.join(E2E_DIR, file), 'utf8'))

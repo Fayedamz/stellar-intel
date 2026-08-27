@@ -253,4 +253,3 @@ defines the path to additional reviewers, and
 - [ ] Separate the operational admin from the upgrade admin (§3.2)
 - [ ] Update `.deployments/testnet.json`
 - [ ] Submit, and record the confirmation reference here (#717)
-

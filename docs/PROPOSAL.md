@@ -281,4 +281,3 @@ not a reputation system.
 
 _This document is a living document. Changes are tracked in git; the version on
 `main` is the current one._
-

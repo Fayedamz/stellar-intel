@@ -102,7 +102,6 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`.
 
 ---
 
-
 ## Adding a New Anchor
 
 Anchors are defined in `constants/anchors.ts` (re-exported via `constants/index.ts`). To add a new anchor:

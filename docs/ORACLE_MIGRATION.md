@@ -197,4 +197,3 @@ process, not here.
   would follow
 - `contracts/reputation/src/migration.rs` — the implementation
 - `contracts/reputation/tests/corridor.rs` — migration tests
-

@@ -55,12 +55,12 @@ describe('lib/stellar/soroswap — behaviour when SOROSWAP_API_KEY is absent (#1
 
     const quote: SoroswapQuote = { amountIn: '1000000', amountOut: '2000000' };
 
-    await expect(
-      buildSoroswapTransaction(quote, 'GABCDEXAMPLEACCOUNT')
-    ).rejects.toBeInstanceOf(SoroswapConfigError);
-    await expect(
-      buildSoroswapTransaction(quote, 'GABCDEXAMPLEACCOUNT')
-    ).rejects.toThrow(/SOROSWAP_API_KEY/);
+    await expect(buildSoroswapTransaction(quote, 'GABCDEXAMPLEACCOUNT')).rejects.toBeInstanceOf(
+      SoroswapConfigError
+    );
+    await expect(buildSoroswapTransaction(quote, 'GABCDEXAMPLEACCOUNT')).rejects.toThrow(
+      /SOROSWAP_API_KEY/
+    );
 
     expect(fetchSpy).not.toHaveBeenCalled();
   });

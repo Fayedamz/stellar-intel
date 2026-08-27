@@ -239,4 +239,3 @@ place, with the same status vocabulary, to a reader who has not read all of them
 
 _See also: [`POSITIONING.md`](POSITIONING.md) for the claims this project
 retired, and [`PROPOSAL.md`](PROPOSAL.md) for what it is for._
-

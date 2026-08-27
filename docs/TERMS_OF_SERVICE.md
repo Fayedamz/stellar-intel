@@ -168,4 +168,3 @@ served.
 - [`docs/THREAT_MODEL.md`](THREAT_MODEL.md) — what is in and out of scope
 - [`docs/ANCHOR_REPUTATION.md`](ANCHOR_REPUTATION.md) — how scores are computed
 - [`docs/SEP_COMPLIANCE.md`](SEP_COMPLIANCE.md) — which anchors support firm quotes
-
