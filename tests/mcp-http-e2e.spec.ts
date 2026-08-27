@@ -10,7 +10,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import { createServer } from '../packages/mcp/src/server.js';
 import { startStreamableHttpServer } from '../packages/mcp/src/transports/streamable-http.js';
 import type { StreamableHttpHandle } from '../packages/mcp/src/transports/streamable-http.js';
 
@@ -31,10 +33,25 @@ describe('MCP server round-trip over streamable HTTP (#1049)', () => {
     await handle?.close();
   });
 
-  it('lists the same three tools as the stdio transport', async () => {
-    const { tools } = await client.listTools();
-    const names = tools.map((t) => t.name).sort();
-    expect(names).toEqual(['intel.execute', 'intel.offramp.prepare', 'intel.offramp.quote']);
+  it('lists the same tools as the in-process server', async () => {
+    // Compared against a freshly built server rather than a hardcoded list, so
+    // that registering a new tool does not require editing this expectation —
+    // the point is that HTTP serves the same registry, not which tools exist.
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    const inProcess = await createServer();
+    await inProcess.connect(serverSide);
+    const reference = new Client({ name: 'in-process-reference', version: '1.0.0' });
+    await reference.connect(clientSide);
+
+    try {
+      const expected = (await reference.listTools()).tools.map((t) => t.name).sort();
+      const names = (await client.listTools()).tools.map((t) => t.name).sort();
+      expect(names).toEqual(expected);
+      expect(names.length).toBeGreaterThan(0);
+    } finally {
+      await reference.close();
+      await inProcess.close();
+    }
   });
 
   it('intel.offramp.prepare returns an unsigned envelope + unsigned tx over HTTP', async () => {
