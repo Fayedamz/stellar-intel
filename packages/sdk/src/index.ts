@@ -14,4 +14,5 @@ export {
   type OfframpIntentResponse,
   type OfframpRoute,
   type AnchorHealth,
+  type CorridorVolumeSavings,
 } from './types.js';

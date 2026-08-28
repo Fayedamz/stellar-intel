@@ -67,6 +67,18 @@ export interface AnchorHealth {
   stale: boolean;
 }
 
+export interface CorridorVolumeSavings {
+  corridorId: string;
+  /** Cumulative volume routed through the corridor, in microUSDC. */
+  volumeUsdc: number;
+  /** Cumulative saved against the baseline rate, in microUSDC. */
+  savingsUsdc: number;
+  /** Settlements behind both totals. */
+  settlementCount: number;
+  /** Ledger timestamp of the last on-chain update; 0 when never written. */
+  updatedAt: number;
+}
+
 /**
  * Every endpoint this SDK calls, as `METHOD path`.
  *
@@ -77,6 +89,7 @@ export const OPERATIONS = {
   getRates: 'GET /api/rates/{corridor}',
   submitOfframpIntent: 'POST /api/v1/intent/offramp',
   getAnchorHealth: 'GET /api/v1/anchors/{id}/health',
+  getCorridorVolumeSavings: 'GET /api/v1/corridors/{corridor}/volume-savings',
   getHealth: 'GET /api/v1/health',
 } as const;
 

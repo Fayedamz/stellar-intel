@@ -6,6 +6,7 @@ import {
 } from './errors.js';
 import type {
   AnchorHealth,
+  CorridorVolumeSavings,
   OfframpIntentRequest,
   OfframpIntentResponse,
   RateComparison,
@@ -147,6 +148,17 @@ export class StellarIntelClient {
     return this.request<AnchorHealth>({
       method: 'GET',
       path: `/api/v1/anchors/${encodeURIComponent(anchorId)}/health`,
+    });
+  }
+
+  /**
+   * Cumulative volume routed and fees saved for a corridor, read from the
+   * on-chain oracle rather than this app's database. Amounts are microUSDC.
+   */
+  async getCorridorVolumeSavings(corridorId: string): Promise<CorridorVolumeSavings> {
+    return this.request<CorridorVolumeSavings>({
+      method: 'GET',
+      path: `/api/v1/corridors/${encodeURIComponent(corridorId)}/volume-savings`,
     });
   }
 
