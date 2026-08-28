@@ -68,6 +68,8 @@ stellar-intel-client = { git = "https://github.com/ezedike-evan/stellar-intel", 
 See [`crates/stellar-intel-client/README.md`](../crates/stellar-intel-client/README.md)
 for usage, retries, and error handling.
 
+### Option 3: drop in a typed fetch wrapper (TypeScript)
+
 ```ts
 // Minimal typed fetch wrapper you can drop in today.
 const BASE = 'https://stellar-intel.vercel.app';
