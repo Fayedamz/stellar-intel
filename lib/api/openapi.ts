@@ -1003,6 +1003,71 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
+  path: '/api/v1/corridors/{corridor}/volume-savings',
+  summary: 'Get cumulative volume and fees saved for a corridor',
+  description:
+    'Reads the on-chain volume/savings oracle for one corridor: cumulative USDC routed, USDC ' +
+    'saved against the baseline rate, and the settlement count behind both. Amounts are ' +
+    'microUSDC. Served from the contract, so the aggregate is checkable without trusting this ' +
+    "app's own database. Zeroes are returned when the corridor has no on-chain entry yet.",
+  tags: ['Rates'],
+  request: {
+    params: z.object({
+      corridor: z.string().min(1).describe('Corridor identifier (e.g. usdc-ngn)'),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Cumulative volume and savings',
+      content: {
+        'application/json': {
+          schema: z.object({
+            corridor: z.string(),
+            volumeUsdc: z.number(),
+            savingsUsdc: z.number(),
+            settlementCount: z.number(),
+            updatedAt: z.number(),
+          }),
+        },
+      },
+    },
+    400: {
+      description: 'Invalid corridor ID',
+      content: { 'application/json': { schema: ApiErrorSchema } },
+    },
+    429: RATE_LIMITED_429,
+    500: {
+      description: 'Oracle read failed',
+      content: { 'application/json': { schema: ApiErrorSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/reputation/reconcile-volume-savings',
+  summary: 'Reconcile volume and savings against the on-chain oracle',
+  description:
+    'Cron-triggered. Re-derives per-corridor volume and savings from the outcome log and ' +
+    'compares them against the on-chain totals, reporting any discrepancy rather than ' +
+    'silently diverging. Protected by CRON_SECRET.',
+  tags: ['System'],
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Reconciliation completed',
+      content: { 'application/json': { schema: z.object({}).passthrough() } },
+    },
+    401: UNAUTHORIZED_401,
+    500: {
+      description: 'Reconciliation failed',
+      content: { 'application/json': { schema: ApiErrorSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
   path: '/api/reputation/reconcile',
   summary: 'Reconcile settled outcomes against Horizon',
   description: 'Cron-triggered reconciliation of pending outcome rows. Protected by CRON_SECRET.',

@@ -2035,6 +2035,142 @@
         }
       }
     },
+    "/api/v1/corridors/{corridor}/volume-savings": {
+      "get": {
+        "summary": "Get cumulative volume and fees saved for a corridor",
+        "description": "Reads the on-chain volume/savings oracle for one corridor: cumulative USDC routed, USDC saved against the baseline rate, and the settlement count behind both. Amounts are microUSDC. Served from the contract, so the aggregate is checkable without trusting this app's own database. Zeroes are returned when the corridor has no on-chain entry yet.",
+        "tags": [
+          "Rates"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Corridor identifier (e.g. usdc-ngn)"
+            },
+            "required": true,
+            "description": "Corridor identifier (e.g. usdc-ngn)",
+            "name": "corridor",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cumulative volume and savings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "corridor": {
+                      "type": "string"
+                    },
+                    "volumeUsdc": {
+                      "type": "number"
+                    },
+                    "savingsUsdc": {
+                      "type": "number"
+                    },
+                    "settlementCount": {
+                      "type": "number"
+                    },
+                    "updatedAt": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "corridor",
+                    "volumeUsdc",
+                    "savingsUsdc",
+                    "settlementCount",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid corridor ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Oracle read failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reputation/reconcile-volume-savings": {
+      "get": {
+        "summary": "Reconcile volume and savings against the on-chain oracle",
+        "description": "Cron-triggered. Re-derives per-corridor volume and savings from the outcome log and compares them against the on-chain totals, reporting any discrepancy rather than silently diverging. Protected by CRON_SECRET.",
+        "tags": [
+          "System"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reconciliation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Reconciliation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/reputation/reconcile": {
       "get": {
         "summary": "Reconcile settled outcomes against Horizon",
