@@ -51,6 +51,8 @@ const LEDGER_PATH = new URL('constants/anchor-health.json', ROOT);
  * @property {string} [assetIssuer] Canonical issuer literal, when written inline.
  * @property {string} [assetIssuerRef] Identifier the source assigns to assetIssuer
  *   (e.g. "USDC_ISSUER") when it is a reference rather than a literal.
+ * @property {boolean} [requiresSep24] Whether the registry declares SEP-24 as a
+ *   supported rail; SEP-6-only anchors are validated against TRANSFER_SERVER.
  *
  * @typedef {Object} Currency
  * @property {string} code
@@ -128,6 +130,8 @@ export function parseAnchors(source) {
     const ref = { id, domain };
     const assetCode = block.match(/assetCode:\s*['"]([^'"]+)['"]/)?.[1];
     if (assetCode) ref.assetCode = assetCode;
+    const seps = block.match(/seps:\s*\[([^\]]*)\]/)?.[1] ?? '';
+    if (/(?:['"]sep24['"])/.test(seps)) ref.requiresSep24 = true;
 
     // assetIssuer may be a quoted literal (e.g. nTokens) or a bare identifier
     // reference (e.g. `assetIssuer: USDC_ISSUER`); capture whichever form appears.
@@ -254,13 +258,14 @@ export function applyProbes(prevLedger, probesById, { threshold, now }) {
 }
 
 /**
- * Probe a single anchor domain's stellar.toml. A 200 response that advertises
- * SEP-24 (`TRANSFER_SERVER_SEP0024`) is a success; anything else is a failure.
+ * Probe a single anchor domain's stellar.toml. SEP-24 anchors must advertise
+ * `TRANSFER_SERVER_SEP0024`; SEP-6-only anchors must advertise `TRANSFER_SERVER`.
  *
  * @param {string} domain
+ * @param {boolean} requiresSep24
  * @returns {Promise<ProbeResult>}
  */
-async function probeDomain(domain) {
+async function probeDomain(domain, requiresSep24) {
   // Validate the host before it reaches fetch: this rejects a malformed registry
   // entry and constrains the file-derived value to a known-safe URL shape.
   if (!HOSTNAME_RE.test(domain)) {
@@ -278,8 +283,15 @@ async function probeDomain(domain) {
     if (!res.ok) return { ok: false, error: `HTTP ${res.status}`, currencies: [] };
     const toml = await res.text();
     const currencies = parseCurrencies(toml);
-    if (!/^\s*TRANSFER_SERVER_SEP0024\s*=/im.test(toml)) {
-      return { ok: false, error: 'missing TRANSFER_SERVER_SEP0024 (SEP-24)', currencies };
+    const transferKey = requiresSep24 ? 'TRANSFER_SERVER_SEP0024' : 'TRANSFER_SERVER';
+    if (!new RegExp(`^\\s*${transferKey}\\s*=`, 'im').test(toml)) {
+      return {
+        ok: false,
+        error: requiresSep24
+          ? 'missing TRANSFER_SERVER_SEP0024 (SEP-24)'
+          : 'missing TRANSFER_SERVER (SEP-6)',
+        currencies,
+      };
     }
     return { ok: true, error: null, currencies };
   } catch (err) {
@@ -350,7 +362,10 @@ async function main() {
   const now = new Date().toISOString();
 
   // Probe in parallel, then reassemble in source order for deterministic diffs.
-  const entries = anchors.map(async ({ id, domain }) => [id, await probeDomain(domain)]);
+  const entries = anchors.map(async ({ id, domain, requiresSep24 }) => [
+    id,
+    await probeDomain(domain, requiresSep24 === true),
+  ]);
   const probesById = Object.fromEntries(await Promise.all(entries));
   const ledger = applyProbes(prevLedger, probesById, { threshold, now });
 
