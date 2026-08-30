@@ -33,8 +33,8 @@ export default function GlobalError({
           <p className="text-accent font-mono text-sm tracking-wide">Error</p>
           <h1 className="type-title text-primary-text mt-4">Something went wrong</h1>
           <p className="text-secondary-text measure mx-auto mt-4">
-            Stellar Intel hit an unexpected error and couldn&apos;t render this page. It&apos;s
-            been logged &mdash; try again.
+            Stellar Intel hit an unexpected error and couldn&apos;t render this page. It&apos;s been
+            logged &mdash; try again.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <button type="button" onClick={reset} className={BUTTON_CLASSES}>
