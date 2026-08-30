@@ -91,6 +91,7 @@ export const OPERATIONS = {
   getAnchorHealth: 'GET /api/v1/anchors/{id}/health',
   getCorridorVolumeSavings: 'GET /api/v1/corridors/{corridor}/volume-savings',
   getHealth: 'GET /api/v1/health',
+  getVolumeSavings: 'GET /api/v1/corridors/{corridor}/volume-savings',
 } as const;
 
 export type OperationName = keyof typeof OPERATIONS;
